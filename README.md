@@ -30,12 +30,16 @@ Esta carpeta es una copia derivada de:
 - Nivel de confianza por criterio.
 - Alertas criticas sobre inferencia, muestreo, generalizacion y trazabilidad.
 - Recomendaciones accionables para mejorar el manuscrito.
+- Modulo opcional de IA asistida compatible con Ollama local para modelos como `qwen3:8b`.
+- Generacion de prompt estructurado y lectura de respuesta JSON del modelo.
+- Registro de casos de aprendizaje supervisado con juicio por reglas, juicio IA y validacion humana.
 - Recomendacion secundaria de revistas sudamericanas compatibles.
 - Checklist editorial por revista.
 - Indexacion, cuartil o nivel de importancia cuando existe evidencia registrada.
 - Bitacora local exportable en JSON o CSV.
 - PWA basica con cache del app shell.
 - Backend Apps Script opcional para registrar solo metadatos de evaluacion.
+- Hoja opcional `ENTRENAMIENTO` para calibracion futura sin almacenar texto completo.
 
 ## Criterios metodologicos evaluados
 
@@ -71,6 +75,25 @@ Codigo de sesion sugerido para el MVP:
 FACEN-REVISTAS
 ```
 
+## IA local opcional
+
+La pestana `IA` permite conectar un modelo local por Ollama:
+
+```bash
+ollama pull qwen3:8b
+ollama serve
+```
+
+Endpoint sugerido:
+
+```text
+http://localhost:11434/api/chat
+```
+
+La app genera un prompt JSON con texto truncado, criterios metodologicos y metadatos. Si el endpoint no es local, la app pide confirmacion antes de enviar el texto. La respuesta esperada es JSON estructurado por criterio.
+
+El aprendizaje no es automatico. Un caso solo entra al dataset local de calibracion cuando un humano lo marca como validado, corregible, descartado o pendiente. El dataset exportable no contiene texto completo del manuscrito.
+
 ## Estructura
 
 ```text
@@ -100,6 +123,8 @@ APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03/
 - La extraccion de PDF depende de la calidad textual del documento; si no hay texto embebido, se intenta OCR en navegador.
 - El OCR es preliminar: documentos extensos, imagenes borrosas, tablas complejas o baja resolucion requieren revision manual del texto extraido.
 - El OCR de PDF se limita inicialmente a las primeras 10 paginas para evitar bloqueos en equipos modestos.
+- La IA local depende de que Ollama u otro endpoint compatible este activo y permita CORS desde el navegador.
+- La IA no reemplaza la rubrica ni la revision humana; funciona como segunda opinion auditable.
 - No se almacena texto completo del manuscrito por defecto.
 - El backend no esta configurado: falta Google Sheet, `SPREADSHEET_ID`, despliegue GAS y endpoint publico.
 - La base de revistas sigue siendo semilla y debe ampliarse.
@@ -115,4 +140,6 @@ APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03/
 5. Crear Google Sheet operativa y desplegar GAS para guardar solo metadatos si el usuario acepta.
 6. Generar reporte exportable en HTML/PDF.
 7. Calibrar umbrales de calidad OCR y documentar falsos positivos/falsos negativos.
-8. Documentar pruebas en bitacora antes de anunciar la app como operativa.
+8. Probar Ollama local con `qwen3:8b` y construir al menos 20 casos validados para calibracion.
+9. Evaluar embeddings `bge-m3` como servicio Python separado para similitud con casos previos.
+10. Documentar pruebas en bitacora antes de anunciar la app como operativa.

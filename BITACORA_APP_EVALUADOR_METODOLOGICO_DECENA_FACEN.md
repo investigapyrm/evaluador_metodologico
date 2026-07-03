@@ -1,3 +1,115 @@
+## 2026-07-03 14:16
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: Git local con remoto `https://github.com/diegomezapy/evalua_articulos_cientificos.git`
+* URL publica: pendiente; rama publicada `evaluador-metodologico-ocr`
+* Responsable: Codex
+* Version: IA asistida y aprendizaje supervisado `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Implementar una primera capa de IA open source/local en la app web, orientada a segunda opinion metodologica y generacion de casos de entrenamiento supervisado.
+
+### Diagnostico inicial
+
+* La app ya contaba con reglas metodologicas transparentes y OCR local asistido.
+* Faltaba una forma de conectar modelos open source como `qwen3:8b` sin convertirlos en veredicto automatico.
+* Para que el sistema aprenda con nuevos articulos, se requiere feedback humano versionable y exportable, no aprendizaje automatico no supervisado.
+
+### Acciones realizadas
+
+* Se agrego pestana `IA`.
+* Se agregaron campos de endpoint y modelo, con valores por defecto para Ollama local.
+* Se agrego generacion de prompt JSON estructurado desde el manuscrito evaluado.
+* Se agrego llamada opcional a endpoint compatible con Ollama.
+* Se agrego importacion manual de respuesta JSON de IA.
+* Se agrego render de dictamen IA separado del dictamen por reglas.
+* Se agrego confirmacion si el endpoint IA no parece local.
+* Se agrego almacenamiento local de casos de entrenamiento supervisado.
+* Se agrego exportacion JSON/CSV de casos de entrenamiento.
+* Se agrego sincronizacion opcional de casos de entrenamiento al backend GAS.
+* Se agrego hoja `ENTRENAMIENTO` en Apps Script.
+* Se actualizaron README, arquitectura, diccionario de datos, checklist, config example y service worker.
+
+### Archivos modificados
+
+* `index.html`
+* `app.js`
+* `styles.css`
+* `service-worker.js`
+* `config.example.js`
+* `apps_script/Code.gs`
+* `README.md`
+* `docs/arquitectura.md`
+* `docs/checklist_despliegue.md`
+* `data/diccionario_datos.md`
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `date '+%Y-%m-%d %H:%M:%S %Z'`
+* `git status --short --branch`
+* `rg` sobre memoria y carpeta maestra para revisar contexto y criterios de modelos externos.
+* `node --check app.js`
+* `node --check service-worker.js`
+* `node --check data/journals_seed.js`
+* `node --check` sobre copia temporal de `apps_script/Code.gs`
+* `curl -I http://localhost:8031/`
+* `curl -s http://localhost:8031/index.html | rg -n "tabIA|aiEndpoint|saveTrainingBtn|Reglas \\+ IA opcional"`
+* `curl -s http://localhost:8031/app.js | rg -n "TRAINING_KEY|runAiReview|buildAiPrompt|saveTrainingCase|syncTrainingEntry"`
+* `curl -s http://localhost:8031/service-worker.js | rg -n "v20260703-3"`
+* `curl -s --max-time 2 http://localhost:11434/api/tags || true`
+* `command -v ollama || true`
+
+### Resultados verificados
+
+* `app.js`, `service-worker.js`, `data/journals_seed.js` y `apps_script/Code.gs` pasan validacion sintactica.
+* La app local responde HTTP 200 en `http://localhost:8031/`.
+* `index.html` servido contiene `tabIA`, `aiEndpoint`, `saveTrainingBtn` y encabezado `Reglas + IA opcional`.
+* `app.js` servido contiene `TRAINING_KEY`, `runAiReview`, `buildAiPrompt`, `saveTrainingCase` y `syncTrainingEntry`.
+* `service-worker.js` servido contiene cache `evaluador-metodologico-v20260703-3`.
+* No se detecto Ollama activo en `http://localhost:11434/api/tags`.
+
+### Pruebas realizadas
+
+* Validacion sintactica de JavaScript frontend, service worker, base de revistas y Apps Script.
+* Verificacion HTTP local de la app servida.
+* Verificacion de marcadores funcionales IA en HTML/JS servidos.
+* Verificacion rapida de disponibilidad de Ollama local.
+
+### Errores o incidentes
+
+* No se probo conexion real con Ollama local porque no aparece instalado o activo en este equipo.
+
+### Soluciones aplicadas
+
+* Se mantuvo IA como segunda opinion auditable, no como reemplazo de la rubrica.
+* Se implemento aprendizaje supervisado: solo se guarda un caso cuando el usuario registra revision humana.
+* Se evita guardar texto completo en el dataset de entrenamiento; se guardan metadatos, estados y feedback.
+
+### Pendientes
+
+* Probar con Ollama local y modelo `qwen3:8b`.
+* Verificar si Ollama permite CORS desde el navegador en este equipo.
+* Calibrar el esquema JSON con ejemplos reales.
+* Evaluar embeddings `bge-m3` como servicio Python posterior.
+
+### Riesgos
+
+* Un endpoint IA externo podria recibir texto del manuscrito; por eso se agrega confirmacion si no parece local.
+* El modelo puede devolver JSON invalido o inventar evidencias; por eso se exige revision humana.
+* El dataset de entrenamiento puede contaminarse si se guardan casos sin validar.
+
+### Recomendaciones
+
+* Crear primero una bateria pequena de casos validados antes de entrenar o ajustar modelos.
+* Separar en el futuro el servicio de embeddings de la app estatica.
+* Mantener versionado de modelo, prompt y esquema de salida.
+
 ## 2026-07-03 13:51
 
 ### Proyecto

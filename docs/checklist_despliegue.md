@@ -22,6 +22,11 @@
 - [ ] Exportar bitacora CSV.
 - [ ] Verificar que no se guarde texto completo en la bitacora.
 - [ ] Verificar que solo se guarden metadatos OCR, no texto OCR completo.
+- [ ] Generar prompt IA desde un manuscrito evaluado.
+- [ ] Importar respuesta JSON IA de prueba.
+- [ ] Guardar caso de entrenamiento supervisado.
+- [ ] Exportar casos de entrenamiento JSON.
+- [ ] Exportar casos de entrenamiento CSV.
 - [ ] Verificar vista movil.
 
 ## Google Apps Script
@@ -32,10 +37,12 @@
 - [ ] Subir `Code.gs` y `appsscript.json`.
 - [ ] Ejecutar `setup()`.
 - [ ] Verificar hojas `ANALISIS`, `LOGS` y `REVISTAS`.
+- [ ] Verificar hoja `ENTRENAMIENTO`.
 - [ ] Desplegar como Web App.
 - [ ] Probar `?action=health`.
 - [ ] Configurar endpoint en `window.RECOMENDADOR_CONFIG.gasEndpoint`.
 - [ ] Confirmar registro de metadatos desde frontend.
+- [ ] Confirmar registro de caso de entrenamiento sin texto completo.
 
 ## GitHub Pages
 

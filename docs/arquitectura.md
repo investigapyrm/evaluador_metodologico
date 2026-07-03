@@ -13,6 +13,7 @@ Construir una app web institucional que permita a investigadores evaluar prelimi
 - Procesamiento local del manuscrito.
 - Extraccion textual con diagnostico de origen: texto PDF, DOCX, archivo textual, texto manual u OCR.
 - OCR en navegador con Tesseract.js para PDFs escaneados o imagenes, con limite operativo inicial de paginas.
+- Modulo opcional de IA asistida contra endpoint local compatible con Ollama.
 - PWA basica para cache de app shell.
 - Bitacora local exportable.
 - No sube texto completo del manuscrito por defecto.
@@ -22,6 +23,7 @@ Construir una app web institucional que permita a investigadores evaluar prelimi
 - Google Apps Script opcional.
 - Google Sheets como base operativa futura.
 - Registra metadatos de evaluacion, puntajes, alertas y ranking.
+- Puede registrar casos de entrenamiento supervisado en hoja `ENTRENAMIENTO`.
 - No guarda texto completo de manuscritos sin consentimiento explicito.
 
 ### Datos
@@ -41,8 +43,10 @@ Construir una app web institucional que permita a investigadores evaluar prelimi
 6. La app perfila el manuscrito: titulo, resumen, idioma, secciones, senales tematicas y metodologicas.
 7. La app calcula robustez metodologica con criterios ponderados.
 8. La app presenta veredicto, puntaje, alertas y recomendaciones.
-9. La app recomienda revistas compatibles solo despues del diagnostico metodologico.
-10. El usuario puede exportar bitacora JSON/CSV.
+9. Opcionalmente, el usuario solicita una segunda evaluacion IA local o pega una respuesta JSON generada fuera de la app.
+10. El usuario valida, corrige o descarta el caso para aprendizaje supervisado.
+11. La app recomienda revistas compatibles solo despues del diagnostico metodologico.
+12. El usuario puede exportar bitacora JSON/CSV y dataset de entrenamiento JSON/CSV.
 
 ## Capa OCR
 
@@ -97,11 +101,38 @@ El ranking de revistas se conserva como segunda capa:
 
 Para manuscritos sobre muestreo, inferencia, representatividad o validez, el motor prioriza revistas de metodologia y estadistica por encima de revistas disciplinarias sin anclaje explicito.
 
+## Modulo de IA asistida
+
+La IA se integra como segunda opinion, no como sustituto de la rubrica.
+
+Diseno inicial:
+
+- endpoint editable, por defecto `http://localhost:11434/api/chat`;
+- modelo editable, por defecto `qwen3:8b`;
+- prompt JSON con metadatos, criterios, juicio por reglas y texto truncado;
+- confirmacion obligatoria si el endpoint no parece local;
+- respuesta esperada en JSON estricto;
+- render de criterios IA separado del dictamen por reglas;
+- guardado local de casos de entrenamiento supervisado.
+
+El caso de entrenamiento incluye:
+
+- metadatos del manuscrito;
+- calidad de extraccion/OCR;
+- senales tematicas y metodologicas;
+- juicio por reglas;
+- juicio IA;
+- top de revistas;
+- decision humana y nota de calibracion.
+
+No incluye texto completo del manuscrito. El aprendizaje futuro debe entrenarse o calibrarse solo con casos revisados por humano.
+
 ## Seguridad y privacidad
 
 - El manuscrito se procesa localmente.
 - La bitacora local guarda metadatos, no texto completo.
 - La bitacora puede guardar metodo de extraccion y calidad OCR, pero no guarda el texto OCR completo.
+- La base de entrenamiento guarda juicios y feedback humano, no texto completo.
 - El backend preparado rechaza payloads con `textoCompleto`.
 - En produccion debe agregarse consentimiento explicito antes de sincronizar metadatos.
 - Si se activa GAS, las hojas deben estar protegidas y auditadas.
@@ -113,6 +144,7 @@ La app solo debe considerarse operativa cuando:
 - GitHub Pages publique la version vigente.
 - Se pruebe carga real de PDF, DOCX y texto pegado.
 - Se pruebe PDF escaneado e imagen con OCR y se revise visualmente la calidad del texto extraido.
+- Se pruebe IA local y se documenten errores de CORS, modelo o JSON si aparecen.
 - GAS responda y registre metadatos reales, si se decide usar backend.
 - Google Sheets tenga estructura protegida.
 - Se haya validado que no se almacena texto completo sin consentimiento.

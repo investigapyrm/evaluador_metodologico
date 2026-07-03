@@ -62,7 +62,7 @@
     <section class="status-strip" aria-live="polite">
       <div>
         <span class="status-label">Motor</span>
-        <strong>Evaluacion local</strong>
+        <strong>Reglas + IA opcional</strong>
       </div>
       <div>
         <span class="status-label">Base editorial</span>
@@ -120,6 +120,7 @@
         <nav class="tabs" aria-label="Vistas de analisis">
           <button class="tab-btn active" data-tab="tabResumen" type="button">Diagnostico</button>
           <button class="tab-btn" data-tab="tabMetodologia" type="button">Metodologia</button>
+          <button class="tab-btn" data-tab="tabIA" type="button">IA</button>
           <button class="tab-btn" data-tab="tabRanking" type="button">Revistas</button>
           <button class="tab-btn" data-tab="tabChecklist" type="button">Checklist</button>
           <button class="tab-btn" data-tab="tabAuditoria" type="button">Auditoria</button>
@@ -189,6 +190,103 @@
               </ul>
             </article>
           </div>
+        </section>
+
+        <section id="tabIA" class="tab-panel">
+          <div class="grid-2">
+            <article class="summary-card">
+              <h2>Modelo local</h2>
+              <div class="ai-config-grid">
+                <label>
+                  Endpoint
+                  <input id="aiEndpoint" type="url" value="http://localhost:11434/api/chat">
+                </label>
+                <label>
+                  Modelo
+                  <input id="aiModel" type="text" value="qwen3:8b">
+                </label>
+              </div>
+              <div class="action-row">
+                <button id="buildAiPromptBtn" class="ghost-btn" type="button">
+                  <i data-lucide="clipboard-list"></i>
+                  Preparar prompt
+                </button>
+                <button id="runAiBtn" class="primary-btn" type="button">
+                  <i data-lucide="brain-circuit"></i>
+                  Evaluar IA
+                </button>
+              </div>
+              <div id="aiStatus" class="source-note">
+                <strong>IA:</strong>
+                <span>Sin evaluacion asistida.</span>
+              </div>
+            </article>
+
+            <article class="summary-card">
+              <h2>Aprendizaje supervisado</h2>
+              <label class="field compact">
+                Revision humana
+                <select id="humanFeedback">
+                  <option value="pendiente">Pendiente</option>
+                  <option value="validado">Validado</option>
+                  <option value="corregir">Requiere correccion</option>
+                  <option value="descartar">Descartar para entrenamiento</option>
+                </select>
+              </label>
+              <label class="field">
+                Nota de calibracion
+                <textarea id="humanFeedbackNote" rows="4" placeholder="Registrar ajuste metodologico, criterio discutible o motivo de descarte."></textarea>
+              </label>
+              <div class="action-row">
+                <button id="saveTrainingBtn" class="primary-btn" type="button">
+                  <i data-lucide="database"></i>
+                  Guardar caso
+                </button>
+                <button id="exportTrainingJsonBtn" class="ghost-btn" type="button">
+                  <i data-lucide="download"></i>
+                  JSON
+                </button>
+                <button id="exportTrainingCsvBtn" class="ghost-btn" type="button">
+                  <i data-lucide="table"></i>
+                  CSV
+                </button>
+              </div>
+              <p id="trainingCount" class="login-note">0 casos guardados.</p>
+            </article>
+          </div>
+
+          <article class="summary-card ai-workbench">
+            <h2>Prompt y respuesta</h2>
+            <div class="grid-2">
+              <label class="field">
+                Prompt estructurado
+                <textarea id="aiPrompt" rows="12" readonly></textarea>
+              </label>
+              <label class="field">
+                Respuesta JSON
+                <textarea id="aiResponse" rows="12" placeholder="Pega aqui la respuesta JSON si ejecutas el prompt fuera de la app."></textarea>
+              </label>
+            </div>
+            <div class="action-row">
+              <button id="copyAiPromptBtn" class="ghost-btn" type="button">
+                <i data-lucide="copy"></i>
+                Copiar prompt
+              </button>
+              <button id="importAiResponseBtn" class="ghost-btn" type="button">
+                <i data-lucide="file-json"></i>
+                Importar JSON
+              </button>
+              <button id="clearAiBtn" class="danger-btn" type="button">
+                <i data-lucide="x"></i>
+                Limpiar IA
+              </button>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <h2>Dictamen IA</h2>
+            <div id="aiResult" class="ai-result empty">Sin dictamen IA.</div>
+          </article>
         </section>
 
         <section id="tabRanking" class="tab-panel">

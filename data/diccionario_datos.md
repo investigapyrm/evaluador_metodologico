@@ -99,6 +99,7 @@ Objeto generado en `app.js` luego del analisis.
 | `readiness` | objeto | Puntaje y pendientes de preparacion editorial. |
 | `extraction` | objeto | Metadatos de origen y calidad del texto usado para el analisis. |
 | `methodology` | objeto | Puntaje, veredicto, criterios, alertas y recomendaciones metodologicas. |
+| `aiReview` | objeto | Dictamen opcional de IA asistida cuando el usuario ejecuta o importa una respuesta JSON. |
 
 ### `extraction`
 
@@ -155,3 +156,54 @@ Guardada en `localStorage` bajo la clave:
 | `criterios_no_verificables` | numero | Cantidad de criterios sin evidencia suficiente. |
 | `criterios_baja_confianza` | numero | Cantidad de criterios con confianza baja o no evaluable. |
 | `top` | lista | Top 5 de revistas recomendadas con puntaje. |
+
+## Dataset local de entrenamiento supervisado
+
+Guardado en `localStorage` bajo la clave:
+
+`decena_evaluador_metodologico_training_v1`
+
+| Campo | Tipo | Descripcion |
+|---|---|---|
+| `timestamp` | fecha-hora | Momento en que se guarda el caso. |
+| `usuario` | texto | Responsable de la sesion. |
+| `rol` | texto | Rol declarado. |
+| `archivo` | texto | Nombre de archivo o texto pegado. |
+| `titulo` | texto | Titulo probable. |
+| `idioma` | texto | Idioma inferido. |
+| `palabras` | numero | Conteo aproximado. |
+| `extraccion` | objeto | Metadatos de extraccion/OCR. |
+| `senales` | objeto | Temas, metodos, nucleo metodologico y nucleo estadistico detectados. |
+| `juicio_reglas` | objeto | Resumen del dictamen por reglas transparentes. |
+| `juicio_ia` | objeto | Resumen del dictamen IA importado o generado. |
+| `top_revistas` | lista | Tres primeras revistas recomendadas al momento de guardar. |
+| `feedback_humano` | objeto | Decision humana: pendiente, validado, requiere correccion o descartar; mas nota de calibracion. |
+
+Este dataset no debe contener texto completo del manuscrito.
+
+## Hoja `ENTRENAMIENTO` en Google Sheets
+
+Cuando se configure Apps Script, la hoja `ENTRENAMIENTO` debe usar estos campos minimos:
+
+| Campo | Tipo | Descripcion |
+|---|---|---|
+| `timestamp` | fecha-hora | Momento de registro. |
+| `usuario` | texto | Responsable. |
+| `rol` | texto | Rol declarado. |
+| `archivo` | texto | Nombre de archivo o texto pegado. |
+| `titulo` | texto | Titulo probable. |
+| `idioma` | texto | Idioma inferido. |
+| `palabras` | numero | Conteo aproximado. |
+| `feedback_decision` | texto | Decision humana para entrenamiento. |
+| `feedback_nota` | texto | Nota breve de calibracion. |
+| `reglas_score` | numero | Puntaje por reglas. |
+| `reglas_veredicto` | texto | Veredicto por reglas. |
+| `ia_modelo` | texto | Modelo usado. |
+| `ia_endpoint_tipo` | texto | `local` o `externo`. |
+| `ia_score` | numero | Puntaje IA. |
+| `ia_veredicto` | texto | Veredicto IA. |
+| `ia_confianza` | texto | Confianza IA. |
+| `ocr_usado` | booleano | Si el texto dependio de OCR. |
+| `top_json` | JSON | Top de revistas resumido. |
+| `criterios_reglas_json` | JSON | Estados por criterio segun reglas. |
+| `criterios_ia_json` | JSON | Estados por criterio segun IA. |

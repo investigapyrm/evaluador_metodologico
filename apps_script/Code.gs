@@ -17,6 +17,7 @@ const SPREADSHEET_ID = '';
 const SHEET_ANALISIS = 'ANALISIS';
 const SHEET_LOGS = 'LOGS';
 const SHEET_REVISTAS = 'REVISTAS';
+const SHEET_ENTRENAMIENTO = 'ENTRENAMIENTO';
 
 const ANALISIS_HEADERS = [
   'timestamp',
@@ -68,6 +69,29 @@ const REVISTAS_HEADERS = [
   'estado_validacion'
 ];
 
+const ENTRENAMIENTO_HEADERS = [
+  'timestamp',
+  'usuario',
+  'rol',
+  'archivo',
+  'titulo',
+  'idioma',
+  'palabras',
+  'feedback_decision',
+  'feedback_nota',
+  'reglas_score',
+  'reglas_veredicto',
+  'ia_modelo',
+  'ia_endpoint_tipo',
+  'ia_score',
+  'ia_veredicto',
+  'ia_confianza',
+  'ocr_usado',
+  'top_json',
+  'criterios_reglas_json',
+  'criterios_ia_json'
+];
+
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
   if (action === 'health') {
@@ -87,9 +111,13 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents || '{}');
-    validateAnalysisPayload(payload);
     const ss = getSpreadsheet();
     ensureSheets(ss);
+    if (payload.tipo === 'entrenamiento') {
+      appendTrainingCase(ss, payload);
+      return jsonOutput({ ok: true, tipo: 'entrenamiento' });
+    }
+    validateAnalysisPayload(payload);
     const top = Array.isArray(payload.top) ? payload.top : [];
     const top1 = top[0] || {};
     ss.getSheetByName(SHEET_ANALISIS).appendRow([
@@ -126,6 +154,37 @@ function doPost(e) {
   }
 }
 
+function appendTrainingCase(ss, payload) {
+  validateTrainingPayload(payload);
+  const reglas = payload.juicio_reglas || {};
+  const ia = payload.juicio_ia || {};
+  const feedback = payload.feedback_humano || {};
+  const extraction = payload.extraccion || {};
+  ss.getSheetByName(SHEET_ENTRENAMIENTO).appendRow([
+    new Date(),
+    clean(payload.usuario),
+    clean(payload.rol),
+    clean(payload.archivo),
+    clean(payload.titulo),
+    clean(payload.idioma),
+    Number(payload.palabras || 0),
+    clean(feedback.decision),
+    clean(feedback.nota),
+    Number(reglas.score || 0),
+    clean(reglas.verdict),
+    clean(ia.modelo),
+    clean(ia.endpoint_tipo),
+    ia.score === '' || ia.score == null ? '' : Number(ia.score || 0),
+    clean(ia.verdict),
+    clean(ia.confianza),
+    Boolean(extraction.ocrUsed),
+    JSON.stringify(payload.top_revistas || []),
+    JSON.stringify(reglas.criterios || []),
+    JSON.stringify(ia.criterios || [])
+  ]);
+  appendLog(ss, 'registrar_entrenamiento', payload.usuario, payload.titulo);
+}
+
 function setup() {
   const ss = getSpreadsheet();
   ensureSheets(ss);
@@ -136,6 +195,7 @@ function ensureSheets(ss) {
   ensureSheet(ss, SHEET_ANALISIS, ANALISIS_HEADERS);
   ensureSheet(ss, SHEET_LOGS, LOG_HEADERS);
   ensureSheet(ss, SHEET_REVISTAS, REVISTAS_HEADERS);
+  ensureSheet(ss, SHEET_ENTRENAMIENTO, ENTRENAMIENTO_HEADERS);
 }
 
 function ensureSheet(ss, name, headers) {
@@ -173,6 +233,15 @@ function validateAnalysisPayload(payload) {
   if (String(payload.titulo || '').length > 400) throw new Error('Titulo demasiado largo.');
   if (String(payload.archivo || '').length > 260) throw new Error('Nombre de archivo demasiado largo.');
   if (payload.textoCompleto) throw new Error('No enviar texto completo del manuscrito al backend.');
+}
+
+function validateTrainingPayload(payload) {
+  if (!payload || typeof payload !== 'object') throw new Error('Payload de entrenamiento invalido.');
+  if (String(payload.titulo || '').length > 400) throw new Error('Titulo demasiado largo.');
+  if (String(payload.archivo || '').length > 260) throw new Error('Nombre de archivo demasiado largo.');
+  if (payload.textoCompleto || payload.texto_manuscrito || payload.fullText) {
+    throw new Error('No enviar texto completo del manuscrito al backend.');
+  }
 }
 
 function clean(value) {

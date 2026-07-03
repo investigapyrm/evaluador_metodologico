@@ -2,8 +2,14 @@
   "use strict";
 
   const AUDIT_KEY = "decena_evaluador_metodologico_audit_v1";
+  const TRAINING_KEY = "decena_evaluador_metodologico_training_v1";
   const SESSION_KEY = "decena_evaluador_metodologico_session_v1";
   const GAS_ENDPOINT = (window.RECOMENDADOR_CONFIG && window.RECOMENDADOR_CONFIG.gasEndpoint) || "";
+  const AI_DEFAULTS = {
+    endpoint: "http://localhost:11434/api/chat",
+    model: "qwen3:8b",
+    maxChars: 12000
+  };
   const PDF_TEXT_MAX_PAGES = 30;
   const OCR_MAX_PAGES = 10;
   const OCR_MIN_TEXT_CHARS = 900;
@@ -17,7 +23,8 @@
     extractedText: "",
     extraction: null,
     profile: null,
-    ranking: []
+    ranking: [],
+    aiReview: null
   };
 
   const $ = (selector) => document.querySelector(selector);
@@ -32,6 +39,8 @@
     bindEvents();
     restoreSession();
     renderAuditLog();
+    initAiControls();
+    renderTrainingCount();
     registerServiceWorker();
     refreshIcons();
   }
@@ -46,6 +55,14 @@
     $("#exportJsonBtn").addEventListener("click", exportAuditJson);
     $("#exportCsvBtn").addEventListener("click", exportAuditCsv);
     $("#clearAuditBtn").addEventListener("click", clearAuditLog);
+    $("#buildAiPromptBtn").addEventListener("click", buildAiPromptForCurrentProfile);
+    $("#copyAiPromptBtn").addEventListener("click", copyAiPrompt);
+    $("#runAiBtn").addEventListener("click", runAiReview);
+    $("#importAiResponseBtn").addEventListener("click", importAiResponse);
+    $("#clearAiBtn").addEventListener("click", clearAiReview);
+    $("#saveTrainingBtn").addEventListener("click", saveTrainingCase);
+    $("#exportTrainingJsonBtn").addEventListener("click", exportTrainingJson);
+    $("#exportTrainingCsvBtn").addEventListener("click", exportTrainingCsv);
     $("#topicWeight").addEventListener("input", rerankIfReady);
     $("#formatWeight").addEventListener("input", rerankIfReady);
 
@@ -88,6 +105,12 @@
     $("#weightBox").hidden = state.user.role === "investigador";
     renderJournalDetail($("#journalSelect").value || window.REVISTAS_DB[0].id);
     refreshIcons();
+  }
+
+  function initAiControls() {
+    const aiConfig = (window.RECOMENDADOR_CONFIG && window.RECOMENDADOR_CONFIG.ai) || {};
+    $("#aiEndpoint").value = aiConfig.endpoint || AI_DEFAULTS.endpoint;
+    $("#aiModel").value = aiConfig.model || AI_DEFAULTS.model;
   }
 
   function logout() {
@@ -414,8 +437,10 @@
     state.extraction = resolveCurrentExtraction(text);
     state.profile = buildArticleProfile(text, state.extraction);
     state.ranking = rankJournals(state.profile);
+    state.aiReview = null;
     renderProfile(state.profile);
     renderRanking(state.ranking);
+    renderAiReview(null);
     renderJournalDetail(state.ranking[0].journal.id);
     saveAuditEntry();
     renderAuditLog();
@@ -429,12 +454,16 @@
     state.extraction = null;
     state.profile = null;
     state.ranking = [];
+    state.aiReview = null;
     $("#fileInput").value = "";
     $("#manualText").value = "";
+    $("#aiPrompt").value = "";
+    $("#aiResponse").value = "";
     setFileState("pendiente", "");
     setStatus("Sin analisis");
     renderProfile(null);
     renderMethodology(null);
+    renderAiReview(null);
     renderRanking([]);
   }
 
@@ -1209,6 +1238,419 @@
         <ul>${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
       </div>
     `;
+  }
+
+  function buildAiPromptForCurrentProfile() {
+    if (!state.profile) {
+      alert("Primero evalua un manuscrito para generar el prompt IA.");
+      return;
+    }
+    const prompt = buildAiPrompt(state.profile, state.extractedText);
+    $("#aiPrompt").value = prompt;
+    setAiStatus("Prompt preparado. Puede ejecutarse localmente o copiarse para revision externa controlada.");
+    activateTab("tabIA");
+  }
+
+  function buildAiPrompt(profile, sourceText) {
+    const localCriteria = profile.methodology.criteria.map((item) => ({
+      id: item.id,
+      criterio: item.label,
+      estado_reglas: item.status,
+      confianza_reglas: item.confidence,
+      evidencia_reglas: item.evidence.slice(0, 2),
+      recomendacion_reglas: item.recommendation
+    }));
+    const payload = {
+      tarea: "evaluacion_metodologica_asistida",
+      idioma_detectado: profile.language,
+      titulo_probable: profile.title,
+      resumen_detectado: profile.abstract,
+      palabras: profile.wordCount,
+      temas_detectados: profile.topics,
+      metodos_detectados: profile.methods,
+      extraccion: profile.extraction,
+      criterios: localCriteria,
+      instrucciones: [
+        "Evalua solo con evidencia disponible en el texto.",
+        "No inventes secciones, resultados, datos, muestras ni pruebas estadisticas.",
+        "Si no hay evidencia suficiente, usa no verificable.",
+        "Devuelve exclusivamente JSON valido, sin markdown.",
+        "Usa fragmentos de evidencia breves y no copies parrafos largos."
+      ],
+      esquema_salida: {
+        model_family: "nombre del modelo o familia",
+        study_type: "cuantitativo|cualitativo|mixto|revision|metodologico|simulacion|no claro",
+        overall_verdict: "texto corto",
+        score_0_100: "numero",
+        confidence: "alta|media|baja|no evaluable",
+        criteria: [
+          {
+            id: "id del criterio recibido",
+            status: "cumple|parcial|no verificable|no cumple|no aplica",
+            confidence: "alta|media|baja|no evaluable",
+            evidence: ["fragmento breve"],
+            recommendation: "accion concreta",
+            reason: "justificacion breve"
+          }
+        ],
+        risks: ["alertas metodologicas"],
+        journal_recommendation_notes: ["notas para seleccion de revista"]
+      },
+      texto_manuscrito: compact(String(sourceText || ""), getAiMaxChars())
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  function getAiMaxChars() {
+    const aiConfig = (window.RECOMENDADOR_CONFIG && window.RECOMENDADOR_CONFIG.ai) || {};
+    return Number(aiConfig.maxChars || AI_DEFAULTS.maxChars);
+  }
+
+  async function copyAiPrompt() {
+    const prompt = $("#aiPrompt").value || "";
+    if (!prompt) {
+      buildAiPromptForCurrentProfile();
+    }
+    const value = $("#aiPrompt").value || "";
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setAiStatus("Prompt copiado.");
+    } catch (error) {
+      $("#aiPrompt").focus();
+      $("#aiPrompt").select();
+      setAiStatus("No se pudo copiar automaticamente; el prompt quedo seleccionado.");
+    }
+  }
+
+  async function runAiReview() {
+    if (!state.profile) {
+      alert("Primero evalua un manuscrito.");
+      return;
+    }
+    if (!$("#aiPrompt").value.trim()) buildAiPromptForCurrentProfile();
+    const endpoint = $("#aiEndpoint").value.trim() || AI_DEFAULTS.endpoint;
+    const model = $("#aiModel").value.trim() || AI_DEFAULTS.model;
+    if (!isLocalEndpoint(endpoint) && !confirm("El endpoint IA no parece local. Esto podria enviar texto del manuscrito fuera del equipo. Continuar?")) {
+      return;
+    }
+    setAiStatus("Consultando modelo IA...");
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: "system",
+              content: "Eres un evaluador metodologico academico. Respondes solo JSON valido y trazable."
+            },
+            { role: "user", content: $("#aiPrompt").value }
+          ],
+          stream: false,
+          options: { temperature: 0.1 }
+        })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const content = extractAiContent(data);
+      if (!content) throw new Error("La respuesta IA no contiene texto interpretable.");
+      $("#aiResponse").value = content;
+      const parsed = parseAiJson(content);
+      state.aiReview = normalizeAiReview(parsed, model, endpoint);
+      renderAiReview(state.aiReview);
+      setAiStatus("Dictamen IA recibido. Revise y valide antes de guardar como caso de aprendizaje.");
+    } catch (error) {
+      console.error(error);
+      setAiStatus(`No se pudo consultar IA: ${error.message || error}. Puede copiar el prompt y pegar luego el JSON.`);
+    }
+  }
+
+  function importAiResponse() {
+    const value = $("#aiResponse").value.trim();
+    if (!value) {
+      alert("Pegue primero una respuesta JSON del modelo.");
+      return;
+    }
+    try {
+      const parsed = parseAiJson(value);
+      state.aiReview = normalizeAiReview(parsed, $("#aiModel").value.trim() || AI_DEFAULTS.model, $("#aiEndpoint").value.trim() || AI_DEFAULTS.endpoint);
+      renderAiReview(state.aiReview);
+      setAiStatus("Respuesta IA importada. Revise antes de guardar.");
+    } catch (error) {
+      alert(`No se pudo leer el JSON IA: ${error.message || error}`);
+    }
+  }
+
+  function clearAiReview() {
+    state.aiReview = null;
+    $("#aiPrompt").value = "";
+    $("#aiResponse").value = "";
+    renderAiReview(null);
+    setAiStatus("Sin evaluacion asistida.");
+  }
+
+  function extractAiContent(data) {
+    if (data && data.message && typeof data.message.content === "string") return data.message.content;
+    if (data && typeof data.response === "string") return data.response;
+    if (data && data.choices && data.choices[0] && data.choices[0].message) return data.choices[0].message.content || "";
+    return "";
+  }
+
+  function parseAiJson(value) {
+    const cleaned = String(value || "")
+      .replace(/^```(?:json)?/i, "")
+      .replace(/```$/i, "")
+      .trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch (error) {
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
+      throw error;
+    }
+  }
+
+  function normalizeAiReview(parsed, model, endpoint) {
+    const criteria = Array.isArray(parsed.criteria) ? parsed.criteria : [];
+    const normalizedCriteria = criteria.map((item) => ({
+      id: String(item.id || "").trim(),
+      label: criterionLabel(item.id),
+      status: normalizeStatus(item.status),
+      statusLabel: statusLabel(normalizeStatus(item.status)),
+      confidence: normalizeConfidence(item.confidence),
+      evidence: Array.isArray(item.evidence) ? item.evidence.map((text) => compact(text, 260)).slice(0, 2) : [],
+      recommendation: compact(item.recommendation || "", 320),
+      reason: compact(item.reason || "", 320)
+    })).filter((item) => item.id);
+    return {
+      timestamp: new Date().toISOString(),
+      model,
+      endpointType: isLocalEndpoint(endpoint) ? "local" : "externo",
+      modelFamily: compact(parsed.model_family || model, 120),
+      studyType: compact(parsed.study_type || "no claro", 80),
+      verdict: compact(parsed.overall_verdict || parsed.verdict || "Sin veredicto", 180),
+      score: clampScore(parsed.score_0_100 ?? parsed.score ?? parsed.puntaje),
+      confidence: normalizeConfidence(parsed.confidence),
+      criteria: normalizedCriteria,
+      risks: Array.isArray(parsed.risks) ? parsed.risks.map((item) => compact(item, 240)).slice(0, 8) : [],
+      journalNotes: Array.isArray(parsed.journal_recommendation_notes)
+        ? parsed.journal_recommendation_notes.map((item) => compact(item, 240)).slice(0, 6)
+        : []
+    };
+  }
+
+  function criterionLabel(id) {
+    const found = METHODOLOGY_CRITERIA.find((item) => item.id === id);
+    return found ? found.label : String(id || "");
+  }
+
+  function normalizeStatus(status) {
+    const text = normalize(status).trim();
+    if (["cumple", "parcial", "no cumple", "no verificable", "no aplica"].includes(text)) return text;
+    if (text.includes("verific")) return "no verificable";
+    if (text.includes("aplica")) return "no aplica";
+    if (text.includes("parcial")) return "parcial";
+    if (text.includes("cumple")) return text.includes("no") ? "no cumple" : "cumple";
+    return "no verificable";
+  }
+
+  function normalizeConfidence(confidence) {
+    const text = normalize(confidence).trim();
+    if (["alta", "media", "baja", "no evaluable"].includes(text)) return text;
+    if (text.includes("alto")) return "alta";
+    if (text.includes("medio")) return "media";
+    if (text.includes("bajo")) return "baja";
+    return "no evaluable";
+  }
+
+  function clampScore(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "";
+    return Math.max(0, Math.min(100, Math.round(number)));
+  }
+
+  function renderAiReview(review) {
+    const container = $("#aiResult");
+    if (!review) {
+      container.className = "ai-result empty";
+      container.textContent = "Sin dictamen IA.";
+      return;
+    }
+    container.className = "ai-result";
+    container.innerHTML = `
+      <div class="ai-summary">
+        <div><span>Modelo</span><strong>${escapeHtml(review.model)}</strong></div>
+        <div><span>Tipo</span><strong>${escapeHtml(review.studyType)}</strong></div>
+        <div><span>Puntaje IA</span><strong>${escapeHtml(review.score || "-")}</strong></div>
+        <div><span>Confianza</span><strong>${escapeHtml(review.confidence)}</strong></div>
+      </div>
+      <p>${escapeHtml(review.verdict)}</p>
+      <div class="criteria-list ai-criteria">
+        ${review.criteria.map((item) => `
+          <div class="criteria-item ${statusClass(item.status)}">
+            <span>${escapeHtml(item.statusLabel)}</span>
+            <div class="criteria-body">
+              <strong>${escapeHtml(item.label)}</strong>
+              <small>Confianza IA: ${escapeHtml(item.confidence)}</small>
+              ${renderEvidenceList(item.evidence)}
+              <p>${escapeHtml(item.reason || item.recommendation || "Sin justificacion especifica.")}</p>
+            </div>
+            <em>IA</em>
+          </div>
+        `).join("")}
+      </div>
+      ${review.risks.length ? `<h3>Riesgos IA</h3><ul class="clean-list">${review.risks.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
+      ${review.journalNotes.length ? `<h3>Notas editoriales IA</h3><ul class="clean-list">${review.journalNotes.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
+    `;
+  }
+
+  function setAiStatus(text) {
+    const node = $("#aiStatus span");
+    if (node) node.textContent = text;
+  }
+
+  function isLocalEndpoint(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      return ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function saveTrainingCase() {
+    if (!state.profile) {
+      alert("Primero evalua un manuscrito.");
+      return;
+    }
+    const feedback = $("#humanFeedback").value;
+    const note = $("#humanFeedbackNote").value.trim();
+    if (feedback === "pendiente" && !confirm("El caso esta pendiente. Guardarlo igualmente como no validado?")) return;
+    const entries = getTrainingEntries();
+    const entry = {
+      timestamp: new Date().toISOString(),
+      usuario: state.user ? state.user.name : "sin sesion",
+      rol: state.user ? state.user.role : "sin rol",
+      archivo: state.fileName || "texto pegado",
+      titulo: state.profile.title,
+      idioma: state.profile.language,
+      palabras: state.profile.wordCount,
+      extraccion: state.profile.extraction,
+      senales: {
+        temas: state.profile.topics,
+        metodos: state.profile.methods,
+        nucleo_metodologico: state.profile.intent.methodologicalCore,
+        nucleo_estadistico: state.profile.intent.statisticalCore
+      },
+      juicio_reglas: summarizeMethodologyForTraining(state.profile.methodology),
+      juicio_ia: summarizeAiForTraining(state.aiReview),
+      top_revistas: state.ranking.slice(0, 3).map((item) => ({
+        revista: item.journal.nombre,
+        puntaje: item.score,
+        alcance: item.scopeFit
+      })),
+      feedback_humano: {
+        decision: feedback,
+        nota: note
+      }
+    };
+    entries.unshift(entry);
+    localStorage.setItem(TRAINING_KEY, JSON.stringify(entries.slice(0, 500)));
+    syncTrainingEntry(entry);
+    renderTrainingCount();
+    setAiStatus("Caso guardado para calibracion supervisada.");
+  }
+
+  function syncTrainingEntry(entry) {
+    if (!GAS_ENDPOINT || !entry) return;
+    fetch(GAS_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ tipo: "entrenamiento", ...entry })
+    }).catch(() => {});
+  }
+
+  function summarizeMethodologyForTraining(methodology) {
+    if (!methodology) return null;
+    return {
+      score: methodology.score,
+      verdict: methodology.verdict,
+      alertas: methodology.alerts.length,
+      evidencias: methodology.evidenceCount,
+      no_verificables: methodology.notVerifiableCount,
+      baja_confianza: methodology.lowConfidenceCount,
+      criterios: methodology.criteria.map((item) => ({
+        id: item.id,
+        estado: item.status,
+        confianza: item.confidence,
+        evidencias: item.evidence.length
+      }))
+    };
+  }
+
+  function summarizeAiForTraining(review) {
+    if (!review) return null;
+    return {
+      modelo: review.model,
+      endpoint_tipo: review.endpointType,
+      tipo_estudio: review.studyType,
+      score: review.score,
+      verdict: review.verdict,
+      confianza: review.confidence,
+      riesgos: review.risks.length,
+      criterios: review.criteria.map((item) => ({
+        id: item.id,
+        estado: item.status,
+        confianza: item.confidence,
+        evidencias: item.evidence.length
+      }))
+    };
+  }
+
+  function getTrainingEntries() {
+    try {
+      return JSON.parse(localStorage.getItem(TRAINING_KEY) || "[]");
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function renderTrainingCount() {
+    const count = getTrainingEntries().length;
+    $("#trainingCount").textContent = `${count.toLocaleString("es-PY")} casos guardados.`;
+  }
+
+  function exportTrainingJson() {
+    downloadFile("casos_entrenamiento_evaluador_metodologico.json", JSON.stringify(getTrainingEntries(), null, 2), "application/json");
+  }
+
+  function exportTrainingCsv() {
+    const rows = getTrainingEntries().map((entry) => ({
+      timestamp: entry.timestamp,
+      usuario: entry.usuario,
+      archivo: entry.archivo,
+      titulo: entry.titulo,
+      idioma: entry.idioma,
+      palabras: entry.palabras,
+      metodo_extraccion: entry.extraccion ? entry.extraccion.method : "",
+      ocr_usado: entry.extraccion ? entry.extraccion.ocrUsed : "",
+      feedback: entry.feedback_humano ? entry.feedback_humano.decision : "",
+      reglas_score: entry.juicio_reglas ? entry.juicio_reglas.score : "",
+      reglas_verdict: entry.juicio_reglas ? entry.juicio_reglas.verdict : "",
+      ia_modelo: entry.juicio_ia ? entry.juicio_ia.modelo : "",
+      ia_score: entry.juicio_ia ? entry.juicio_ia.score : "",
+      ia_verdict: entry.juicio_ia ? entry.juicio_ia.verdict : "",
+      ia_confianza: entry.juicio_ia ? entry.juicio_ia.confianza : ""
+    }));
+    const header = Object.keys(rows[0] || { timestamp: "", titulo: "", feedback: "" });
+    const csv = [header.join(",")]
+      .concat(rows.map((row) => header.map((field) => csvCell(row[field])).join(",")))
+      .join("\n");
+    downloadFile("casos_entrenamiento_evaluador_metodologico.csv", csv, "text/csv;charset=utf-8");
   }
 
   function renderRanking(results) {
