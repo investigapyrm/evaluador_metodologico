@@ -1,3 +1,91 @@
+## 2026-07-03 14:51
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio destino: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: pendiente de activar GitHub Pages
+* Responsable: Codex
+* Version: intento de publicacion institucional `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Completar el commit y push final de la app web hacia el repositorio institucional `investigapyrm/evaluador_metodologico.git`.
+
+### Diagnostico inicial
+
+* El repositorio local estaba limpio y con el commit `c028676` preparado.
+* `origin` apuntaba a `https://github.com/investigapyrm/evaluador_metodologico.git`.
+* Se conservo el remoto anterior como `respaldo_diegomezapy`.
+* La rama local `main` quedo un commit por delante del respaldo previo.
+
+### Acciones realizadas
+
+* Se intento publicar por HTTPS con `git push -u origin main`.
+* Se probo acceso alternativo por SSH con `git ls-remote git@github.com:investigapyrm/evaluador_metodologico.git`.
+* Se intento revisar el repositorio mediante el conector GitHub disponible en Codex.
+* Se verifico que no existan `GITHUB_TOKEN` ni `GH_TOKEN` disponibles en el entorno local.
+* Se verifico que las CLI `gh` y `hub` no estan instaladas.
+
+### Archivos modificados
+
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status -sb`
+* `git remote -v`
+* `git log --oneline --decorate -5`
+* `git push -u origin main`
+* `GIT_SSH_COMMAND='ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10' git ls-remote git@github.com:investigapyrm/evaluador_metodologico.git`
+* Verificacion de variables locales `GITHUB_TOKEN` y `GH_TOKEN`.
+* Verificacion de disponibilidad local de `gh` y `hub`.
+
+### Resultados verificados
+
+* El commit local preparado para publicar es `c028676`.
+* El push HTTPS fallo con permiso denegado: `Permission to investigapyrm/evaluador_metodologico.git denied to diegomezapy`.
+* El acceso SSH fallo con `Permission denied (publickey)`.
+* El conector GitHub fallo con `401 token_expired`.
+* No hay token local disponible para una publicacion alternativa por API.
+
+### Pruebas realizadas
+
+* Verificacion Git local.
+* Verificacion de remoto institucional configurado.
+* Verificacion de acceso SSH no interactivo.
+* Verificacion de herramientas de publicacion disponibles en el entorno.
+
+### Errores o incidentes
+
+* Bloqueo externo por autenticacion/permisos de GitHub. El codigo y el commit local estan listos, pero la cuenta/token actual no tiene permiso efectivo de escritura sobre `investigapyrm/evaluador_metodologico.git`.
+
+### Soluciones aplicadas
+
+* Se dejo el repositorio local preparado con `origin` apuntando al destino institucional.
+* Se dejo el remoto anterior preservado como `respaldo_diegomezapy`.
+* Se registro evidencia completa del bloqueo para retomar la publicacion sin reconstruir el trabajo.
+
+### Pendientes
+
+* Confirmar que `diegomezapy` haya aceptado la invitacion de colaborador o tenga permiso `Write/Maintain/Admin` sobre `investigapyrm/evaluador_metodologico`.
+* Si la organizacion exige SSO, autorizar el token de GitHub para la organizacion `investigapyrm`.
+* Alternativamente, iniciar sesion con `gh auth login` o publicar desde GitHub Desktop con una cuenta con permisos.
+* Reintentar `git push -u origin main`.
+* Activar GitHub Pages desde `main` cuando el push institucional quede aplicado.
+
+### Riesgos
+
+* Mientras el permiso no se corrija, el repositorio institucional seguira vacio aunque el trabajo local este preparado.
+* La URL publica de GitHub Pages no existira hasta que haya al menos una rama publicada y Pages sea activado.
+
+### Recomendaciones
+
+* Corregir primero el permiso de escritura del usuario o token actual antes de nuevos cambios de codigo.
+* Una vez corregido el permiso, ejecutar `git push -u origin main` desde esta misma carpeta.
+
 ## 2026-07-03 14:47
 
 ### Proyecto
