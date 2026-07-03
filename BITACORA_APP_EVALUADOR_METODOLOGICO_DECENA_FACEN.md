@@ -1,3 +1,78 @@
+## 2026-07-03 14:36
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/diegomezapy/evalua_articulos_cientificos.git`
+* URL publica: pendiente; rama publicada `evaluador-metodologico-ocr`
+* Responsable: Codex
+* Version: cierre commit and push final `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Verificar que la app web quede commiteada y empujada al remoto luego de incorporar OCR, IA asistida y aprendizaje supervisado.
+
+### Diagnostico inicial
+
+* El arbol local estaba limpio.
+* `HEAD` apuntaba al commit `86b136b`.
+* La rama local `main` seguia a `origin/evaluador-metodologico-ocr`.
+
+### Acciones realizadas
+
+* Se verifico estado Git local.
+* Se verifico remoto configurado.
+* Se verifico hash remoto de la rama `evaluador-metodologico-ocr`.
+* Se ejecuto `git push origin main:evaluador-metodologico-ocr`.
+* Se confirmo que el remoto respondio `Everything up-to-date`.
+
+### Archivos modificados
+
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --short --branch`
+* `git log --oneline --decorate -5`
+* `git remote -v`
+* `git ls-remote --heads origin evaluador-metodologico-ocr`
+* `git push origin main:evaluador-metodologico-ocr`
+
+### Resultados verificados
+
+* Rama remota publicada: `evaluador-metodologico-ocr`.
+* Hash remoto previo al cierre: `86b136b9421c87cef63b26f50d2184edccb9678c`.
+* No habia cambios de codigo pendientes.
+
+### Pruebas realizadas
+
+* Verificacion Git local/remota.
+
+### Errores o incidentes
+
+* Sin incidentes.
+
+### Soluciones aplicadas
+
+* Se deja cierre documental en bitacora para trazabilidad final.
+
+### Pendientes
+
+* Probar la app con usuario final.
+* Probar OCR real desde navegador.
+* Probar Ollama local con `qwen3:8b`.
+* Activar URL publica o PR cuando se defina si esta rama reemplaza o no a la app publica actual.
+
+### Riesgos
+
+* La rama publicada no equivale todavia a despliegue publico en GitHub Pages.
+
+### Recomendaciones
+
+* Usar la rama `evaluador-metodologico-ocr` para pruebas controladas antes de mezclar con la rama publica principal.
+
 ## 2026-07-03 14:16
 
 ### Proyecto
