@@ -8,7 +8,9 @@
   const AI_DEFAULTS = {
     endpoint: "http://localhost:11434/api/chat",
     model: "qwen3:8b",
-    maxChars: 12000
+    maxChars: 12000,
+    probeTimeoutMs: 7000,
+    requestTimeoutMs: 120000
   };
   const PDF_TEXT_MAX_PAGES = 30;
   const OCR_MAX_PAGES = 10;
@@ -56,6 +58,7 @@
     $("#exportCsvBtn").addEventListener("click", exportAuditCsv);
     $("#clearAuditBtn").addEventListener("click", clearAuditLog);
     $("#buildAiPromptBtn").addEventListener("click", buildAiPromptForCurrentProfile);
+    $("#testAiBtn").addEventListener("click", testAiEndpoint);
     $("#copyAiPromptBtn").addEventListener("click", copyAiPrompt);
     $("#runAiBtn").addEventListener("click", runAiReview);
     $("#importAiResponseBtn").addEventListener("click", importAiResponse);
@@ -1323,20 +1326,38 @@
     }
   }
 
+  async function testAiEndpoint() {
+    const endpoint = getAiEndpoint();
+    const model = getAiModel();
+    setAiStatus("Probando conexion con endpoint IA...");
+    try {
+      const probe = await probeAiEndpoint(endpoint, model);
+      setAiStatus(probe.message);
+    } catch (error) {
+      console.error(error);
+      setAiStatus(formatAiConnectionError(error, endpoint, model));
+    }
+  }
+
   async function runAiReview() {
     if (!state.profile) {
       alert("Primero evalua un manuscrito.");
       return;
     }
     if (!$("#aiPrompt").value.trim()) buildAiPromptForCurrentProfile();
-    const endpoint = $("#aiEndpoint").value.trim() || AI_DEFAULTS.endpoint;
-    const model = $("#aiModel").value.trim() || AI_DEFAULTS.model;
+    const endpoint = getAiEndpoint();
+    const model = getAiModel();
     if (!isLocalEndpoint(endpoint) && !confirm("El endpoint IA no parece local. Esto podria enviar texto del manuscrito fuera del equipo. Continuar?")) {
       return;
     }
     setAiStatus("Consultando modelo IA...");
     try {
-      const response = await fetch(endpoint, {
+      if (isOllamaEndpoint(endpoint)) {
+        const probe = await probeAiEndpoint(endpoint, model);
+        if (probe.blocking) throw new Error(probe.message);
+        setAiStatus(`${probe.message} Consultando modelo IA...`);
+      }
+      const response = await fetchWithTimeout(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1351,7 +1372,7 @@
           stream: false,
           options: { temperature: 0.1 }
         })
-      });
+      }, getAiRequestTimeout());
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const content = extractAiContent(data);
@@ -1363,8 +1384,99 @@
       setAiStatus("Dictamen IA recibido. Revise y valide antes de guardar como caso de aprendizaje.");
     } catch (error) {
       console.error(error);
-      setAiStatus(`No se pudo consultar IA: ${error.message || error}. Puede copiar el prompt y pegar luego el JSON.`);
+      setAiStatus(formatAiConnectionError(error, endpoint, model));
     }
+  }
+
+  function getAiEndpoint() {
+    return $("#aiEndpoint").value.trim() || AI_DEFAULTS.endpoint;
+  }
+
+  function getAiModel() {
+    return $("#aiModel").value.trim() || AI_DEFAULTS.model;
+  }
+
+  async function probeAiEndpoint(endpoint, model) {
+    if (!endpoint) throw new Error("Endpoint IA vacio.");
+    if (!isOllamaEndpoint(endpoint)) {
+      return {
+        blocking: false,
+        message: "Endpoint externo configurado. La prueba de modelos solo esta automatizada para Ollama; al evaluar se pedira confirmacion de envio."
+      };
+    }
+    const tagsEndpoint = getOllamaTagsEndpoint(endpoint);
+    const response = await fetchWithTimeout(tagsEndpoint, {
+      method: "GET",
+      cache: "no-store"
+    }, getAiProbeTimeout());
+    if (!response.ok) throw new Error(`Ollama respondio HTTP ${response.status} en ${tagsEndpoint}.`);
+    const data = await response.json();
+    const models = parseOllamaModels(data);
+    if (models.length && !models.includes(model)) {
+      return {
+        blocking: true,
+        message: `Ollama responde, pero no aparece el modelo ${model}. Ejecute: ollama pull ${model}.`
+      };
+    }
+    const suffix = models.length ? ` Modelo verificado: ${model}.` : " No se pudo listar modelos, pero el servicio responde.";
+    return {
+      blocking: false,
+      message: `Ollama responde en ${tagsEndpoint}.${suffix}`
+    };
+  }
+
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal }).finally(() => window.clearTimeout(timeout));
+  }
+
+  function getAiProbeTimeout() {
+    const aiConfig = (window.RECOMENDADOR_CONFIG && window.RECOMENDADOR_CONFIG.ai) || {};
+    return Number(aiConfig.probeTimeoutMs || AI_DEFAULTS.probeTimeoutMs);
+  }
+
+  function getAiRequestTimeout() {
+    const aiConfig = (window.RECOMENDADOR_CONFIG && window.RECOMENDADOR_CONFIG.ai) || {};
+    return Number(aiConfig.requestTimeoutMs || AI_DEFAULTS.requestTimeoutMs);
+  }
+
+  function isOllamaEndpoint(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      return url.port === "11434" || url.pathname === "/api/chat" || url.pathname.endsWith("/api/chat");
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function getOllamaTagsEndpoint(endpoint) {
+    const url = new URL(endpoint);
+    url.pathname = "/api/tags";
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  }
+
+  function parseOllamaModels(data) {
+    if (!data || !Array.isArray(data.models)) return [];
+    return data.models
+      .map((item) => String(item.name || item.model || "").trim())
+      .filter(Boolean);
+  }
+
+  function formatAiConnectionError(error, endpoint, model) {
+    const rawMessage = error && error.name === "AbortError"
+      ? "tiempo de espera agotado"
+      : String((error && error.message) || error || "error desconocido");
+    const networkPattern = /failed to fetch|load failed|networkerror|could not connect|connection refused|tiempo de espera/i;
+    if (isLocalEndpoint(endpoint) && networkPattern.test(rawMessage)) {
+      return `No se pudo conectar con Ollama local (${endpoint}). Abra Ollama, ejecute "ollama pull ${model}" y "ollama serve"; si usa GitHub Pages, permita CORS para esta pagina. Puede copiar el prompt e importar el JSON.`;
+    }
+    if (isOllamaEndpoint(endpoint) && /modelo|model|pull/i.test(rawMessage)) {
+      return `${rawMessage} Puede copiar el prompt e importar el JSON.`;
+    }
+    return `No se pudo consultar IA: ${rawMessage}. Puede copiar el prompt y pegar luego el JSON.`;
   }
 
   function importAiResponse() {

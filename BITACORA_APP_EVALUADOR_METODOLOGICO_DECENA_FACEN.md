@@ -1,3 +1,100 @@
+## 2026-07-03 15:22
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica esperada: `https://investigapyrm.github.io/evaluador_metodologico/`
+* Responsable: Codex
+* Version: hotfix IA local Ollama/CORS `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Corregir la experiencia de error del modulo IA, que mostraba `Failed to fetch` sin explicar si Ollama estaba apagado, faltaba el modelo, el endpoint era incorrecto o existia bloqueo CORS.
+
+### Diagnostico inicial
+
+* El modulo IA usaba por defecto `http://localhost:11434/api/chat`.
+* El navegador reportaba `Failed to fetch`.
+* La prueba local `curl -sS --max-time 5 http://localhost:11434/api/tags` fallo con conexion rechazada, confirmando que Ollama no estaba activo en este equipo.
+* La app ya tenia flujo manual por prompt/JSON, pero el mensaje de error no orientaba suficientemente.
+
+### Acciones realizadas
+
+* Se agrego boton `Probar conexion` en la pestana IA.
+* Se agrego prueba automatica contra `/api/tags` cuando el endpoint parece Ollama.
+* Se agrego verificacion de modelo configurado.
+* Se agregaron timeouts defensivos para prueba y solicitud larga.
+* Se mejoro el mensaje de error para Ollama apagado, modelo faltante, timeout o CORS.
+* Se documento el uso de `OLLAMA_ORIGINS` para GitHub Pages.
+* Se incremento la version de cache del service worker.
+* Se agrego aprendizaje reutilizable en la carpeta maestra.
+
+### Archivos modificados
+
+* `index.html`
+* `app.js`
+* `config.example.js`
+* `service-worker.js`
+* `README.md`
+* `docs/arquitectura.md`
+* `docs/checklist_despliegue.md`
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+* Archivo maestro: `APRENDIZAJE_APPWEB_IA_LOCAL_OLLAMA_CORS_2026-07-03.md`
+
+### Comandos o scripts ejecutados
+
+* `rg -n "IA|ai|Ollama|ollama|fetch|endpoint|api/chat|Failed to fetch|No se pudo consultar" ...`
+* `curl -sS --max-time 5 http://localhost:11434/api/tags`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `node --check data/journals_seed.js`
+* `node --check` sobre copia temporal de `apps_script/Code.gs`
+* `curl -I --max-time 5 http://localhost:8031/`
+* `curl -s --max-time 5 http://localhost:8031/index.html | rg -n "testAiBtn|Probar conexion"`
+* `curl -s --max-time 5 http://localhost:8031/app.js | rg -n "probeAiEndpoint|formatAiConnectionError|No se pudo conectar con Ollama local"`
+
+### Resultados verificados
+
+* La sintaxis JavaScript no devolvio errores.
+* El servidor local respondio `HTTP 200`.
+* El HTML servido contiene `testAiBtn` y `Probar conexion`.
+* El `app.js` servido contiene `probeAiEndpoint` y `formatAiConnectionError`.
+* Ollama no responde localmente en `http://localhost:11434/api/tags`, por lo que no se pudo validar una respuesta real del modelo en este equipo.
+
+### Pruebas realizadas
+
+* Validacion sintactica de frontend y Apps Script.
+* Validacion de marcadores funcionales servidos por HTTP local.
+* Prueba negativa del endpoint Ollama local.
+
+### Errores o incidentes
+
+* Endpoint Ollama local no disponible: `curl: (7) Failed to connect to localhost port 11434`.
+
+### Soluciones aplicadas
+
+* La app ya no queda en un error generico; ahora informa que debe abrirse Ollama, instalarse el modelo y permitirse CORS cuando aplique.
+* Se mantiene el flujo alternativo de copiar prompt e importar JSON.
+
+### Pendientes
+
+* Probar con Ollama activo y modelo `qwen3:8b` instalado.
+* Activar o verificar GitHub Pages y probar desde la URL publica.
+* Si se usa GitHub Pages, iniciar Ollama con `OLLAMA_ORIGINS` que incluya `https://investigapyrm.github.io`.
+
+### Riesgos
+
+* El endpoint `localhost` siempre depende del equipo del usuario; GitHub Pages no puede levantar Ollama por si mismo.
+* Si el navegador mantiene cache viejo, puede requerir recargar o actualizar la app para recibir `service-worker.js` nuevo.
+
+### Recomendaciones
+
+* Para pruebas locales ejecutar `ollama pull qwen3:8b` y luego `ollama serve`.
+* Para pruebas desde GitHub Pages usar `OLLAMA_ORIGINS="https://investigapyrm.github.io,http://localhost:8031,http://127.0.0.1:8031" ollama serve`.
+
 ## 2026-07-03 15:10
 
 ### Proyecto

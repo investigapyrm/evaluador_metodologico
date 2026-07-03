@@ -109,6 +109,8 @@ Diseno inicial:
 
 - endpoint editable, por defecto `http://localhost:11434/api/chat`;
 - modelo editable, por defecto `qwen3:8b`;
+- prueba de conexion contra `/api/tags` cuando el endpoint parece Ollama;
+- diagnostico explicito para Ollama apagado, modelo faltante, timeout o bloqueo CORS;
 - prompt JSON con metadatos, criterios, juicio por reglas y texto truncado;
 - confirmacion obligatoria si el endpoint no parece local;
 - respuesta esperada en JSON estricto;

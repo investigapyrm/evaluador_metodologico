@@ -23,6 +23,7 @@
 - [ ] Verificar que no se guarde texto completo en la bitacora.
 - [ ] Verificar que solo se guarden metadatos OCR, no texto OCR completo.
 - [ ] Generar prompt IA desde un manuscrito evaluado.
+- [ ] Probar conexion IA contra Ollama local o documentar el motivo de no disponibilidad.
 - [ ] Importar respuesta JSON IA de prueba.
 - [ ] Guardar caso de entrenamiento supervisado.
 - [ ] Exportar casos de entrenamiento JSON.

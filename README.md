@@ -94,7 +94,22 @@ Endpoint sugerido:
 http://localhost:11434/api/chat
 ```
 
-La app genera un prompt JSON con texto truncado, criterios metodologicos y metadatos. Si el endpoint no es local, la app pide confirmacion antes de enviar el texto. La respuesta esperada es JSON estructurado por criterio.
+La app genera un prompt JSON con texto truncado, criterios metodologicos y metadatos. Antes de consultar Ollama puede usar `Probar conexion`; la app revisa `http://localhost:11434/api/tags` y avisa si Ollama no esta activo o si falta el modelo configurado.
+
+Si aparece `Failed to fetch`, normalmente significa una de estas situaciones:
+
+- Ollama no esta abierto en el equipo del usuario.
+- El modelo no fue descargado con `ollama pull qwen3:8b`.
+- El navegador bloqueo la consulta por CORS, especialmente si la app se usa desde GitHub Pages.
+- El endpoint configurado no es el correcto.
+
+Para usar Ollama local desde GitHub Pages puede ser necesario iniciar Ollama permitiendo el origen publico de la app:
+
+```bash
+OLLAMA_ORIGINS="https://investigapyrm.github.io,http://localhost:8031,http://127.0.0.1:8031" ollama serve
+```
+
+Si el endpoint no es local, la app pide confirmacion antes de enviar el texto. La respuesta esperada es JSON estructurado por criterio.
 
 El aprendizaje no es automatico. Un caso solo entra al dataset local de calibracion cuando un humano lo marca como validado, corregible, descartado o pendiente. El dataset exportable no contiene texto completo del manuscrito.
 
@@ -127,7 +142,7 @@ APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03/
 - La extraccion de PDF depende de la calidad textual del documento; si no hay texto embebido, se intenta OCR en navegador.
 - El OCR es preliminar: documentos extensos, imagenes borrosas, tablas complejas o baja resolucion requieren revision manual del texto extraido.
 - El OCR de PDF se limita inicialmente a las primeras 10 paginas para evitar bloqueos en equipos modestos.
-- La IA local depende de que Ollama u otro endpoint compatible este activo y permita CORS desde el navegador.
+- La IA local depende de que Ollama u otro endpoint compatible este activo, tenga el modelo descargado y permita CORS desde el navegador.
 - La IA no reemplaza la rubrica ni la revision humana; funciona como segunda opinion auditable.
 - No se almacena texto completo del manuscrito por defecto.
 - El backend no esta configurado: falta Google Sheet, `SPREADSHEET_ID`, despliegue GAS y endpoint publico.
