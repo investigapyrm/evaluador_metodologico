@@ -1,3 +1,91 @@
+## 2026-07-03 15:09
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: pendiente de activar GitHub Pages
+* Responsable: Codex
+* Version: publicacion institucional confirmada `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Reintentar el commit and push final luego de que `diegomezapy` fuera agregado como colaborador del repositorio institucional.
+
+### Diagnostico inicial
+
+* El repositorio local estaba limpio.
+* `origin` apuntaba correctamente a `https://github.com/investigapyrm/evaluador_metodologico.git`.
+* El repositorio institucional no tenia ramas publicadas antes del reintento.
+* La rama local `main` tenia `HEAD` en `c6a5576`.
+
+### Acciones realizadas
+
+* Se verifico estado Git local y remotos.
+* Se verifico que el repositorio destino seguia vacio antes del push.
+* Se ejecuto `git push -u origin main`.
+* Se verifico la rama remota `main` con `git ls-remote --heads origin main`.
+* Se ejecutaron verificaciones sintacticas de JavaScript y Apps Script.
+* Se actualizo esta bitacora para cierre trazable de publicacion.
+
+### Archivos modificados
+
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status -sb`
+* `git remote -v`
+* `git log --oneline --decorate -7`
+* `git ls-remote https://github.com/investigapyrm/evaluador_metodologico.git`
+* `git push -u origin main`
+* `git ls-remote --heads origin main`
+* `node --check app.js`
+* `node --check service-worker.js`
+* `node --check data/journals_seed.js`
+* `node --check` sobre copia temporal de `apps_script/Code.gs`
+
+### Resultados verificados
+
+* Se creo la rama remota `main` en `investigapyrm/evaluador_metodologico`.
+* Hash remoto publicado al cierre del primer push exitoso: `c6a55763a0b9ed225fb1f63156f47b7f09634d17`.
+* La rama local `main` quedo siguiendo a `origin/main`.
+* Las verificaciones sintacticas no devolvieron errores.
+
+### Pruebas realizadas
+
+* Verificacion Git local/remota.
+* Verificacion sintactica de archivos JavaScript principales.
+* Verificacion sintactica de Apps Script mediante copia temporal `.js`.
+
+### Errores o incidentes
+
+* El bloqueo anterior por `403` quedo resuelto luego de ajustar la colaboracion/permisos de GitHub.
+
+### Soluciones aplicadas
+
+* Se publico la app en el repositorio institucional.
+* Se mantuvo el remoto anterior como `respaldo_diegomezapy`.
+* Se deja bitacora local y central sincronizada para continuidad.
+
+### Pendientes
+
+* Activar GitHub Pages desde la rama `main`.
+* Verificar la URL publica cuando Pages quede habilitado.
+* Probar el flujo OCR/IA desde la URL publica con un manuscrito real.
+
+### Riesgos
+
+* La publicacion del repositorio no activa automaticamente GitHub Pages.
+* Las funciones IA con Ollama dependen de que el usuario tenga un endpoint local disponible.
+
+### Recomendaciones
+
+* Activar GitHub Pages desde `Settings > Pages > Deploy from branch > main`.
+* Registrar la URL publica final en este README y en esta bitacora.
+
 ## 2026-07-03 14:51
 
 ### Proyecto
