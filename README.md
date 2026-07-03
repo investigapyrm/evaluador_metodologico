@@ -8,6 +8,10 @@ Version MVP local: `2026-07-03`
 
 La app funciona como frontend estatico con HTML, CSS y JavaScript. El manuscrito se procesa en el navegador y no se sube a un servidor. El backend Google Apps Script queda preparado para una fase posterior de registro institucional de metadatos en Google Sheets.
 
+Repositorio principal:
+
+`https://github.com/investigapyrm/evaluador_metodologico`
+
 Esta carpeta es una copia derivada de:
 
 `03_TESIS/APP_RECOMENDADOR_REVISTAS_2026-06-26`

@@ -1,3 +1,76 @@
+## 2026-07-03 14:47
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: pendiente de activar GitHub Pages
+* Responsable: Codex
+* Version: publicacion en repositorio institucional `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Publicar la app web en el repositorio institucional vacio `investigapyrm/evaluador_metodologico.git`, usando la colaboracion disponible de la cuenta autenticada.
+
+### Diagnostico inicial
+
+* El repositorio local estaba limpio.
+* El remoto anterior era `https://github.com/diegomezapy/evalua_articulos_cientificos.git`.
+* La consulta a `https://github.com/investigapyrm/evaluador_metodologico.git` no devolvio ramas, consistente con repositorio vacio.
+
+### Acciones realizadas
+
+* Se verifico estado Git local.
+* Se verifico que el repositorio destino exista y no tenga refs publicados.
+* Se actualizo `README.md` con el repositorio principal.
+* Se preparo esta entrada de bitacora para cierre trazable de publicacion.
+
+### Archivos modificados
+
+* `README.md`
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status --short --branch`
+* `git log --oneline --decorate -3`
+* `git remote -v`
+* `git ls-remote https://github.com/investigapyrm/evaluador_metodologico.git`
+* Pendiente tras esta entrada: commit, cambio de remoto y push a `main`.
+
+### Resultados verificados
+
+* Repositorio destino accesible y sin ramas publicadas al inicio.
+
+### Pruebas realizadas
+
+* Verificacion Git local y consulta remota.
+
+### Errores o incidentes
+
+* Sin incidentes hasta esta etapa.
+
+### Soluciones aplicadas
+
+* Se conserva el remoto anterior como respaldo antes de cambiar `origin`.
+
+### Pendientes
+
+* Hacer commit de publicacion.
+* Empujar `main` al repositorio `investigapyrm/evaluador_metodologico.git`.
+* Verificar hash remoto.
+* Activar GitHub Pages si se desea URL publica de prueba.
+
+### Riesgos
+
+* Publicar el repo no activa automaticamente GitHub Pages.
+
+### Recomendaciones
+
+* Usar este repositorio como fuente principal de la app web y activar Pages desde `main` cuando se confirme la prueba funcional.
+
 ## 2026-07-03 14:36
 
 ### Proyecto
