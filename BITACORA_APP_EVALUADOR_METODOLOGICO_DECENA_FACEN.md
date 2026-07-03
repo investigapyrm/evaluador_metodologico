@@ -16,10 +16,11 @@
 
 ### Diagnostico inicial
 
-* El repositorio local estaba limpio y con el commit `c028676` preparado.
+* El repositorio local estaba limpio y con el commit de app `c028676` preparado.
 * `origin` apuntaba a `https://github.com/investigapyrm/evaluador_metodologico.git`.
 * Se conservo el remoto anterior como `respaldo_diegomezapy`.
 * La rama local `main` quedo un commit por delante del respaldo previo.
+* Luego se generaron commits documentales adicionales solo para registrar la publicacion institucional y el bloqueo encontrado.
 
 ### Acciones realizadas
 
@@ -28,6 +29,7 @@
 * Se intento revisar el repositorio mediante el conector GitHub disponible en Codex.
 * Se verifico que no existan `GITHUB_TOKEN` ni `GH_TOKEN` disponibles en el entorno local.
 * Se verifico que las CLI `gh` y `hub` no estan instaladas.
+* Se hizo un reintento final de `git push -u origin main` luego de commitear el registro de bitacora.
 
 ### Archivos modificados
 
@@ -42,11 +44,13 @@
 * `GIT_SSH_COMMAND='ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10' git ls-remote git@github.com:investigapyrm/evaluador_metodologico.git`
 * Verificacion de variables locales `GITHUB_TOKEN` y `GH_TOKEN`.
 * Verificacion de disponibilidad local de `gh` y `hub`.
+* Reintento final de `git push -u origin main` con el cierre documental incluido.
 
 ### Resultados verificados
 
-* El commit local preparado para publicar es `c028676`.
+* El commit de app preparado para publicar es `c028676`; existen commits documentales posteriores para trazabilidad.
 * El push HTTPS fallo con permiso denegado: `Permission to investigapyrm/evaluador_metodologico.git denied to diegomezapy`.
+* El reintento final del push con la bitacora commiteada fallo con el mismo `403`.
 * El acceso SSH fallo con `Permission denied (publickey)`.
 * El conector GitHub fallo con `401 token_expired`.
 * No hay token local disponible para una publicacion alternativa por API.
