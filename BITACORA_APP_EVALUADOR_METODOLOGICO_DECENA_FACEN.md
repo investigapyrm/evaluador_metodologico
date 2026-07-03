@@ -1,3 +1,75 @@
+## 2026-07-03 15:10
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica evaluada: `https://investigapyrm.github.io/evaluador_metodologico/`
+* Responsable: Codex
+* Version: verificacion post-publicacion `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Verificar el estado remoto posterior al push y distinguir repositorio publicado de app publica operativa.
+
+### Diagnostico inicial
+
+* La rama `main` ya habia sido creada en el repositorio institucional.
+* La rama local `main` seguia a `origin/main`.
+
+### Acciones realizadas
+
+* Se verifico `origin/main`.
+* Se comparo la bitacora local contra la copia central.
+* Se consulto la URL esperada de GitHub Pages.
+
+### Archivos modificados
+
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status -sb`
+* `git ls-remote --heads origin main`
+* `cmp -s` contra la copia central de bitacora.
+* `curl -I -L --max-time 20 https://investigapyrm.github.io/evaluador_metodologico/`
+
+### Resultados verificados
+
+* Hash remoto verificado antes de esta entrada: `395137f2b40cd5553b4f30a94b0465a9ebef1145`.
+* La copia central de bitacora estaba sincronizada.
+* La URL de GitHub Pages respondio `HTTP/2 404`, por lo que Pages aun no esta activo o no termino de publicarse.
+
+### Pruebas realizadas
+
+* Verificacion Git remota.
+* Verificacion HTTP de URL publica esperada.
+
+### Errores o incidentes
+
+* No hay error de publicacion del repositorio.
+* La app publica por GitHub Pages aun no esta disponible.
+
+### Soluciones aplicadas
+
+* Se deja documentada la diferencia entre repositorio publicado y URL publica pendiente.
+
+### Pendientes
+
+* Activar GitHub Pages desde la configuracion del repositorio.
+* Reconsultar la URL publica hasta obtener `HTTP 200`.
+* Registrar la URL validada en README y bitacora.
+
+### Riesgos
+
+* Compartir la URL de Pages antes de activarla generara un `404` para los usuarios.
+
+### Recomendaciones
+
+* Activar Pages con fuente `Deploy from branch`, rama `main`, carpeta `/root`.
+
 ## 2026-07-03 15:09
 
 ### Proyecto
