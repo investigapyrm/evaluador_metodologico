@@ -1,3 +1,80 @@
+## 2026-07-03 16:01
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: `https://investigapyrm.github.io/evaluador_metodologico/`
+* Responsable: Codex
+* Version: verificacion publica Revisor Experto `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Registrar la publicacion y verificacion publica del modo Revisor Experto luego del push a `main`.
+
+### Diagnostico inicial
+
+* El commit funcional `cb6af8d` habia sido empujado a `origin/main`.
+* GitHub Pages tardo unos segundos en reflejar el nuevo HTML y recursos versionados.
+
+### Acciones realizadas
+
+* Se verifico `origin/main`.
+* Se verifico el contenido raw de GitHub para `index.html`, `app.js` y `service-worker.js`.
+* Se verifico GitHub Pages con cache-busting.
+
+### Archivos modificados
+
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `git status -sb`
+* `git ls-remote --heads origin main`
+* `curl -sS -L --max-time 20 'https://raw.githubusercontent.com/investigapyrm/evaluador_metodologico/main/index.html' | rg -n "tabExperto|Revisor|app.js\\?v=20260703-expert1"`
+* `curl -sS -L --max-time 20 'https://raw.githubusercontent.com/investigapyrm/evaluador_metodologico/main/app.js' | rg -n "evaluateExpertReview|sampling_survey|dictamen_experto_metodologico|summarizeExpertForTraining"`
+* `curl -sS -L --max-time 20 'https://raw.githubusercontent.com/investigapyrm/evaluador_metodologico/main/service-worker.js' | rg -n "evaluador-metodologico-v20260703-5|app.js\\?v=20260703-expert1"`
+* `curl -I -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/index.html?v=cb6af8d'`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/index.html?v=cb6af8d' | rg -n "tabExperto|Revisor|app.js\\?v=20260703-expert1"`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/app.js?v=20260703-expert1' | rg -n "evaluateExpertReview|sampling_survey|dictamen_experto_metodologico"`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/service-worker.js?v=cb6af8d' | rg -n "evaluador-metodologico-v20260703-5|app.js\\?v=20260703-expert1"`
+
+### Resultados verificados
+
+* `origin/main` contenia `cb6af8dbd08da52ddde1b76d81117ea2fa5b822f`.
+* GitHub Pages respondio `HTTP/2 200`.
+* El HTML publico contiene `tabExperto`, boton `Revisor` y `app.js?v=20260703-expert1`.
+* El `app.js` publico contiene `evaluateExpertReview`, `sampling_survey` y exportacion `dictamen_experto_metodologico`.
+* El service worker publico contiene `evaluador-metodologico-v20260703-5`.
+
+### Pruebas realizadas
+
+* Verificacion remota Git.
+* Verificacion raw GitHub.
+* Verificacion HTTP publica GitHub Pages con cache-busting.
+
+### Errores o incidentes
+
+* Sin incidentes nuevos. Hubo una breve latencia de propagacion de GitHub Pages.
+
+### Soluciones aplicadas
+
+* Se confirmo que la app publica ya entrega el modo Revisor Experto.
+
+### Pendientes
+
+* Validacion humana con manuscritos reales y ajuste de pesos/terminos.
+
+### Riesgos
+
+* Usuarios con service worker previo pueden requerir recarga fuerte si la app ya estaba abierta.
+
+### Recomendaciones
+
+* Probar primero con un texto sobre errores de muestreo para verificar que la clasificacion y el ranking se comporten como esperado.
+
 ## 2026-07-03 15:59
 
 ### Proyecto
