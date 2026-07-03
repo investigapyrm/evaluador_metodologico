@@ -1,9 +1,9 @@
-const CACHE_NAME = "evaluador-metodologico-v20260703-4";
+const CACHE_NAME = "evaluador-metodologico-v20260703-5";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js?v=20260703-ia1",
+  "./app.js?v=20260703-expert1",
   "./data/journals_seed.js",
   "./manifest.webmanifest"
 ];

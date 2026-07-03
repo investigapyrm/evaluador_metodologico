@@ -33,6 +33,10 @@ Esta carpeta es una copia derivada de:
 - Evaluacion metodologica inicial con 11 criterios ponderados.
 - Puntaje de robustez metodologica sobre 100.
 - Veredicto metodologico: alto riesgo, requiere ajustes, robustez razonable o robustez alta.
+- Modo Revisor Experto con clasificacion del tipo de estudio.
+- Rubricas especializadas para muestreo/encuestas, cuantitativo, cualitativo, revision, simulacion, metodologico o general.
+- Matriz de coherencia Objetivo -> Datos -> Metodo -> Resultados -> Conclusion -> Verificacion.
+- Dictamen experto exportable en HTML sin incluir texto completo del manuscrito.
 - Estado por criterio: cumple, parcial, no verificable, no cumple o no aplica.
 - Evidencia textual por criterio cuando la app la localiza.
 - Nivel de confianza por criterio.
@@ -62,6 +66,20 @@ Esta carpeta es una copia derivada de:
 9. Datos, codigo o replicabilidad declarados.
 10. Declaraciones editoriales basicas.
 11. Referencias o bibliografia identificables.
+
+## Modo Revisor Experto
+
+La pestana `Revisor` agrega una segunda capa mas exigente:
+
+- clasifica automaticamente el tipo de estudio;
+- aplica una rubrica especializada segun el tipo detectado;
+- construye una matriz de coherencia entre objetivo, datos, metodo, resultados, conclusion y verificacion;
+- separa brechas criticas de ajustes editoriales menores;
+- genera correcciones prioritarias;
+- orienta el ranking de revistas para evitar recomendaciones disciplinarias cuando el nucleo real es metodologico o estadistico;
+- exporta un dictamen HTML trazable.
+
+Para manuscritos sobre errores de muestreo, la app exige evidencia de universo/marco muestral, diseno muestral, seleccion de unidades, error/varianza/incertidumbre, ponderacion/no respuesta, alcance inferencial y replicabilidad.
 
 ## Ejecutar localmente
 

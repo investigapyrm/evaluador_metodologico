@@ -120,6 +120,7 @@
         <nav class="tabs" aria-label="Vistas de analisis">
           <button class="tab-btn active" data-tab="tabResumen" type="button">Diagnostico</button>
           <button class="tab-btn" data-tab="tabMetodologia" type="button">Metodologia</button>
+          <button class="tab-btn" data-tab="tabExperto" type="button">Revisor</button>
           <button class="tab-btn" data-tab="tabIA" type="button">IA</button>
           <button class="tab-btn" data-tab="tabRanking" type="button">Revistas</button>
           <button class="tab-btn" data-tab="tabChecklist" type="button">Checklist</button>
@@ -187,6 +188,70 @@
               <h3>Recomendaciones</h3>
               <ul id="methodologyRecommendations" class="clean-list">
                 <li>Analiza un manuscrito para generar recomendaciones.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="tabExperto" class="tab-panel">
+          <article class="expert-hero">
+            <div>
+              <p class="eyebrow">Modo Revisor Experto</p>
+              <h2 id="expertVerdict">Sin dictamen experto</h2>
+              <p id="expertNarrative">Analiza un manuscrito para activar la clasificacion del tipo de estudio y la rubrica especializada.</p>
+            </div>
+            <div class="expert-score" aria-label="Puntaje experto">
+              <strong id="expertScore">0</strong>
+              <span>/100</span>
+            </div>
+          </article>
+
+          <div class="expert-summary-grid">
+            <article class="summary-card">
+              <h2>Tipo de estudio</h2>
+              <dl class="summary-list compact-list">
+                <div><dt>Clasificacion</dt><dd id="expertStudyType">-</dd></div>
+                <div><dt>Confianza</dt><dd id="expertConfidence">-</dd></div>
+                <div><dt>Rubrica aplicada</dt><dd id="expertRubricName">-</dd></div>
+              </dl>
+              <div id="expertTypeEvidence" class="evidence-box empty">Sin evidencia de clasificacion.</div>
+            </article>
+
+            <article class="summary-card">
+              <div class="panel-title-row">
+                <h2>Dictamen exportable</h2>
+                <button id="exportExpertReportBtn" class="ghost-btn" type="button">
+                  <i data-lucide="file-down"></i>
+                  HTML
+                </button>
+              </div>
+              <ul id="expertActions" class="clean-list">
+                <li>El dictamen aparecera despues del analisis.</li>
+              </ul>
+            </article>
+          </div>
+
+          <article class="summary-card expert-block">
+            <h2>Matriz de coherencia</h2>
+            <div id="coherenceMatrix" class="coherence-matrix empty">Sin matriz generada.</div>
+          </article>
+
+          <article class="summary-card expert-block">
+            <h2>Rubrica especializada</h2>
+            <div id="expertRubricCriteria" class="criteria-list empty">Sin criterios especializados.</div>
+          </article>
+
+          <div class="grid-2 expert-block">
+            <article class="summary-card">
+              <h2>Correcciones prioritarias</h2>
+              <ul id="expertCorrections" class="clean-list">
+                <li>Sin correcciones todavia.</li>
+              </ul>
+            </article>
+            <article class="summary-card">
+              <h2>Orientacion editorial</h2>
+              <ul id="expertJournalGuidance" class="clean-list">
+                <li>Sin orientacion todavia.</li>
               </ul>
             </article>
           </div>
@@ -394,6 +459,6 @@
   <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js" defer></script>
   <script src="https://unpkg.com/lucide@latest" defer></script>
   <script src="data/journals_seed.js" defer></script>
-  <script src="app.js?v=20260703-ia1" defer></script>
+  <script src="app.js?v=20260703-expert1" defer></script>
 </body>
 </html>

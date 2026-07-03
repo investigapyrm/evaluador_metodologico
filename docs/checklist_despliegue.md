@@ -22,6 +22,10 @@
 - [ ] Exportar bitacora CSV.
 - [ ] Verificar que no se guarde texto completo en la bitacora.
 - [ ] Verificar que solo se guarden metadatos OCR, no texto OCR completo.
+- [ ] Verificar clasificacion del tipo de estudio en pestaña Revisor.
+- [ ] Verificar matriz de coherencia del Revisor Experto.
+- [ ] Exportar dictamen experto HTML y confirmar que no contiene texto completo del manuscrito.
+- [ ] Probar un texto sobre errores de muestreo y confirmar que no prioriza revistas disciplinarias sin anclaje.
 - [ ] Generar prompt IA desde un manuscrito evaluado.
 - [ ] Probar conexion IA contra Ollama local o documentar el motivo de no disponibilidad.
 - [ ] Importar respuesta JSON IA de prueba.

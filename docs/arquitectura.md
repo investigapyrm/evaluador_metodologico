@@ -42,11 +42,13 @@ Construir una app web institucional que permita a investigadores evaluar prelimi
 5. La app registra metadatos de extraccion: metodo, fuente, paginas leidas, uso de OCR, paginas OCR, confianza promedio y advertencias.
 6. La app perfila el manuscrito: titulo, resumen, idioma, secciones, senales tematicas y metodologicas.
 7. La app calcula robustez metodologica con criterios ponderados.
-8. La app presenta veredicto, puntaje, alertas y recomendaciones.
-9. Opcionalmente, el usuario solicita una segunda evaluacion IA local o pega una respuesta JSON generada fuera de la app.
-10. El usuario valida, corrige o descarta el caso para aprendizaje supervisado.
-11. La app recomienda revistas compatibles solo despues del diagnostico metodologico.
-12. El usuario puede exportar bitacora JSON/CSV y dataset de entrenamiento JSON/CSV.
+8. El modo Revisor Experto clasifica el tipo de estudio y aplica una rubrica especializada.
+9. La app construye matriz de coherencia entre objetivo, datos, metodo, resultados, conclusion y verificacion.
+10. La app presenta veredicto, puntaje, alertas, recomendaciones y dictamen exportable.
+11. Opcionalmente, el usuario solicita una segunda evaluacion IA local o pega una respuesta JSON generada fuera de la app.
+12. El usuario valida, corrige o descarta el caso para aprendizaje supervisado.
+13. La app recomienda revistas compatibles solo despues del diagnostico metodologico y experto.
+14. El usuario puede exportar bitacora JSON/CSV, dictamen experto HTML y dataset de entrenamiento JSON/CSV.
 
 ## Capa OCR
 
@@ -100,6 +102,31 @@ El ranking de revistas se conserva como segunda capa:
 - visibilidad e indexacion documentada.
 
 Para manuscritos sobre muestreo, inferencia, representatividad o validez, el motor prioriza revistas de metodologia y estadistica por encima de revistas disciplinarias sin anclaje explicito.
+
+## Modo Revisor Experto
+
+El revisor experto funciona como una capa de control mas exigente que la rubrica general.
+
+Componentes:
+
+- clasificador de tipo de estudio;
+- rubricas especializadas por tipo;
+- matriz de coherencia;
+- correcciones prioritarias;
+- orientacion editorial condicionada por tipo de estudio;
+- exportacion HTML sin texto completo del manuscrito.
+
+Tipos iniciales:
+
+- muestreo, encuesta o error de muestreo;
+- cuantitativo/estadistico;
+- cualitativo;
+- revision de literatura;
+- simulacion o experimento computacional;
+- metodologico/conceptual;
+- general cuando no hay clasificacion robusta.
+
+La regla principal es conservadora: si no hay evidencia textual breve, el criterio queda como `no verificable` o `parcial`. Para manuscritos de muestreo se exigen marco muestral, diseno, seleccion, incertidumbre/error, no respuesta/sesgo, alcance inferencial y replicabilidad antes de recomendar envio editorial.
 
 ## Modulo de IA asistida
 

@@ -787,6 +787,116 @@ meter {
   margin-top: 4px;
 }
 
+.expert-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--line);
+  background: #f4f9f7;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.expert-score {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  min-height: 112px;
+  border: 1px solid rgba(40, 114, 79, 0.25);
+  background: #ffffff;
+}
+
+.expert-score strong {
+  font-size: 42px;
+  line-height: 1;
+  color: var(--green);
+}
+
+.expert-score span {
+  color: var(--muted);
+}
+
+.expert-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+.compact-list div {
+  grid-template-columns: 150px minmax(0, 1fr);
+}
+
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.panel-title-row h2 {
+  margin-bottom: 0;
+}
+
+.expert-block {
+  margin-top: 14px;
+}
+
+.coherence-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coherence-matrix.empty {
+  display: block;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  padding: 14px;
+}
+
+.coherence-item {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 10px;
+  min-height: 150px;
+}
+
+.coherence-item span {
+  width: max-content;
+  max-width: 100%;
+  color: #fff;
+  background: var(--muted);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.coherence-item.cumple span {
+  background: var(--green);
+}
+
+.coherence-item.parcial span {
+  background: var(--amber);
+}
+
+.coherence-item.no-verificable span,
+.coherence-item.no-cumple span {
+  background: var(--red);
+}
+
+.coherence-item p,
+.coherence-item small {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .ranking-list {
   display: grid;
   gap: 12px;
@@ -974,7 +1084,10 @@ summary {
   .detail-grid,
   .ai-config-grid,
   .ai-summary,
+  .expert-summary-grid,
+  .coherence-matrix,
   .explain-grid,
+  .expert-hero,
   .methodology-hero,
   .criteria-item {
     grid-template-columns: 1fr;

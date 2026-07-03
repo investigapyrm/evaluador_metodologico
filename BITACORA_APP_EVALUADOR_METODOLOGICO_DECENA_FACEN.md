@@ -1,3 +1,104 @@
+## 2026-07-03 15:59
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: `https://investigapyrm.github.io/evaluador_metodologico/`
+* Responsable: Codex
+* Version: Revisor Experto metodologico `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Implementar una version inicial superpotente del evaluador: clasificacion del tipo de estudio, rubricas especializadas, matriz de coherencia, dictamen experto exportable y recomendacion editorial condicionada por la naturaleza metodologica del manuscrito.
+
+### Diagnostico inicial
+
+* La app ya tenia OCR, rubrica metodologica general, IA opcional y ranking de revistas.
+* La principal brecha era que el juzgamiento seguia siendo general y podia no distinguir suficientemente un manuscrito sobre errores de muestreo de un manuscrito disciplinario de ciencia politica.
+* El backend Apps Script tenia encabezados fijos y no contemplaba metadatos del revisor experto.
+
+### Acciones realizadas
+
+* Se agrego pestana `Revisor`.
+* Se agrego clasificador de tipo de estudio.
+* Se agregaron rubricas especializadas para muestreo/encuestas, cuantitativo, cualitativo, revision, simulacion, metodologico y general.
+* Se agrego matriz de coherencia Objetivo -> Datos -> Metodo -> Resultados -> Conclusion -> Verificacion.
+* Se agrego dictamen experto exportable en HTML sin texto completo del manuscrito.
+* Se integro el revisor experto al prompt IA, entrenamiento supervisado, auditoria local y CSV.
+* Se ajusto el ranking de revistas para penalizar revistas disciplinarias cuando el revisor clasifica el manuscrito como muestreo/encuesta sin anclaje disciplinario suficiente.
+* Se actualizaron columnas del backend Apps Script para analisis y entrenamiento.
+* Se actualizo cache-busting y service worker.
+* Se documento el cambio en README, arquitectura, checklist y archivo maestro de aprendizaje.
+
+### Archivos modificados
+
+* `index.html`
+* `app.js`
+* `styles.css`
+* `service-worker.js`
+* `README.md`
+* `docs/arquitectura.md`
+* `docs/checklist_despliegue.md`
+* `apps_script/Code.gs`
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+* Archivo maestro: `APRENDIZAJE_APPWEB_REVISOR_EXPERTO_METODOLOGICO_2026-07-03.md`
+
+### Comandos o scripts ejecutados
+
+* `node --check app.js`
+* `node --check service-worker.js`
+* `node --check data/journals_seed.js`
+* `node --check` sobre copia temporal de `apps_script/Code.gs`
+* `rg -n "tabExperto|expertReview|evaluateExpertReview|Revisor Experto|app.js\\?v=20260703-expert1|evaluador-metodologico-v20260703-5" ...`
+* `curl -s --max-time 5 http://localhost:8031/index.html | rg -n "tabExperto|Revisor|expertVerdict|app.js\\?v=20260703-expert1"`
+* `curl -s --max-time 5 'http://localhost:8031/app.js?v=20260703-expert1' | rg -n "evaluateExpertReview|sampling_survey|dictamen_experto_metodologico|summarizeExpertForTraining"`
+* `curl -s --max-time 5 http://localhost:8031/service-worker.js | rg -n "evaluador-metodologico-v20260703-5|app.js\\?v=20260703-expert1"`
+* `git diff --check`
+
+### Resultados verificados
+
+* La sintaxis de `app.js`, `service-worker.js`, `journals_seed.js` y `Code.gs` no devolvio errores.
+* El HTML local servido contiene la pestana `tabExperto`.
+* El JavaScript local servido contiene `evaluateExpertReview`, `sampling_survey`, exportacion del dictamen y resumen experto para entrenamiento.
+* El service worker local servido contiene cache `evaluador-metodologico-v20260703-5` y `app.js?v=20260703-expert1`.
+* `git diff --check` no reporto errores de espacios.
+
+### Pruebas realizadas
+
+* Validacion sintactica.
+* Validacion por marcadores funcionales servidos via HTTP local.
+* Revision de integracion con auditoria, entrenamiento y backend opcional.
+
+### Errores o incidentes
+
+* La prueba con Chrome headless fue detenida porque tardo mas de 30 segundos, probablemente por dependencias externas/CDN; no se considero evidencia funcional completa.
+
+### Soluciones aplicadas
+
+* Se dejo implementado el modo Revisor Experto con reglas transparentes y evidencia breve.
+* Se mantuvo la restriccion de no guardar texto completo del manuscrito.
+* Se agrego cache-busting para evitar que GitHub Pages o el service worker sirvan versiones anteriores.
+
+### Pendientes
+
+* Validar con manuscritos reales, especialmente uno sobre errores de muestreo.
+* Verificar visualmente en GitHub Pages despues del push.
+* Ajustar pesos y terminos de rubricas con feedback humano.
+
+### Riesgos
+
+* La clasificacion por reglas puede requerir calibracion con casos reales.
+* Si el OCR es pobre, el revisor experto puede marcar criterios como no verificables por falta de evidencia textual.
+* El backend requiere ejecutar `setup()` o actualizar encabezados si se activa sobre una hoja existente.
+
+### Recomendaciones
+
+* Usar esta version para generar casos de entrenamiento supervisado y revisar falsos positivos/falsos negativos.
+* Para articulos de muestreo, exigir siempre evidencia de marco muestral, diseno, error/varianza, no respuesta, alcance inferencial y replicabilidad antes de recomendar envio.
+
 ## 2026-07-03 15:24
 
 ### Proyecto

@@ -26,7 +26,8 @@
     extraction: null,
     profile: null,
     ranking: [],
-    aiReview: null
+    aiReview: null,
+    expertReview: null
   };
 
   const $ = (selector) => document.querySelector(selector);
@@ -57,6 +58,7 @@
     $("#exportJsonBtn").addEventListener("click", exportAuditJson);
     $("#exportCsvBtn").addEventListener("click", exportAuditCsv);
     $("#clearAuditBtn").addEventListener("click", clearAuditLog);
+    $("#exportExpertReportBtn").addEventListener("click", exportExpertReport);
     $("#buildAiPromptBtn").addEventListener("click", buildAiPromptForCurrentProfile);
     $("#testAiBtn").addEventListener("click", testAiEndpoint);
     $("#copyAiPromptBtn").addEventListener("click", copyAiPrompt);
@@ -439,6 +441,7 @@
     state.extractedText = text;
     state.extraction = resolveCurrentExtraction(text);
     state.profile = buildArticleProfile(text, state.extraction);
+    state.expertReview = state.profile.expertReview;
     state.ranking = rankJournals(state.profile);
     state.aiReview = null;
     renderProfile(state.profile);
@@ -458,6 +461,7 @@
     state.profile = null;
     state.ranking = [];
     state.aiReview = null;
+    state.expertReview = null;
     $("#fileInput").value = "";
     $("#manualText").value = "";
     $("#aiPrompt").value = "";
@@ -466,6 +470,7 @@
     setStatus("Sin analisis");
     renderProfile(null);
     renderMethodology(null);
+    renderExpertReview(null);
     renderAiReview(null);
     renderRanking([]);
   }
@@ -500,9 +505,11 @@
       hasEthics: /etica|comite de etica|consentimiento|irb|conflicto de interes|financiamiento|funding/.test(normalized),
       hasAI: /inteligencia artificial|ia generativa|chatgpt|openai|gemini|claude|large language model/.test(normalized),
       readiness,
-      methodology: null
+      methodology: null,
+      expertReview: null
     };
     profile.methodology = evaluateMethodology(profile, text, normalized);
+    profile.expertReview = evaluateExpertReview(profile, text, normalized);
     return profile;
   }
 
@@ -620,6 +627,142 @@
     }
   ];
 
+  const STUDY_TYPE_PATTERNS = {
+    sampling_survey: {
+      label: "Muestreo, encuesta o error de muestreo",
+      terms: ["muestreo", "sampling", "encuesta", "survey", "muestra", "marco muestral", "diseno muestral", "error de muestreo", "errores de muestreo", "margen de error", "representatividad", "estrato", "conglomerado", "ponderador", "no respuesta"]
+    },
+    quantitative: {
+      label: "Cuantitativo/estadistico",
+      terms: ["cuantitativo", "regresion", "modelo estadistico", "estimacion", "p-valor", "intervalo de confianza", "varianza", "error estandar", "variable dependiente", "variable independiente", "n="]
+    },
+    qualitative: {
+      label: "Cualitativo",
+      terms: ["cualitativo", "entrevista", "grupo focal", "etnografia", "codificacion", "analisis de contenido", "saturacion", "triangulacion", "categorias emergentes", "corpus"]
+    },
+    review: {
+      label: "Revision de literatura",
+      terms: ["revision sistematica", "scoping review", "estado del arte", "revision de literatura", "busqueda bibliografica", "criterios de inclusion", "criterios de exclusion", "prisma", "bases de datos", "screening"]
+    },
+    simulation: {
+      label: "Simulacion o experimento computacional",
+      terms: ["simulacion", "monte carlo", "escenario", "parametros", "algoritmo", "replicaciones", "sensibilidad", "datos sinteticos", "experimento computacional"]
+    },
+    methodological: {
+      label: "Metodologico/conceptual",
+      terms: ["metodologico", "metodologia", "validez", "sesgo", "reproducibilidad", "replicabilidad", "medicion", "inferencia", "procedimiento", "protocolo", "calibracion"]
+    }
+  };
+
+  const EXPERT_RUBRICS = {
+    sampling_survey: {
+      label: "Rubrica para muestreo, encuestas y errores de muestreo",
+      criteria: [
+        expertCriterion("universo_marco", "Universo y marco muestral definidos", 12, ["universo", "poblacion objetivo", "marco muestral", "cobertura", "unidad de analisis"], "Definir universo, poblacion objetivo, marco muestral y cobertura efectiva.", true),
+        expertCriterion("diseno_muestral", "Diseno muestral documentado", 13, ["diseno muestral", "muestreo probabilistico", "muestreo estratificado", "conglomerado", "aleatorio", "sampling design"], "Nombrar y justificar el diseno muestral usado.", true),
+        expertCriterion("seleccion_unidades", "Seleccion de unidades trazable", 10, ["seleccion", "unidades", "etapas", "probabilidad de seleccion", "criterios de inclusion", "criterios de exclusion"], "Explicar como se seleccionaron unidades, casos o respondentes."),
+        expertCriterion("tamano_muestra", "Tamano muestral y precision", 10, ["tamano de muestra", "n=", "muestra efectiva", "precision", "potencia", "margen de error"], "Justificar tamano muestral o precision esperada."),
+        expertCriterion("error_varianza", "Error de muestreo, varianza o incertidumbre", 14, ["error de muestreo", "errores de muestreo", "varianza", "error estandar", "intervalo de confianza", "deff", "efecto de diseno"], "Cuantificar o discutir error de muestreo, varianza, DEFF o incertidumbre.", true),
+        expertCriterion("ponderacion_no_respuesta", "Ponderacion, no respuesta y sesgos", 10, ["ponderador", "ponderacion", "peso muestral", "no respuesta", "sesgo de seleccion", "sesgo de cobertura", "ajuste"], "Documentar ponderaciones, no respuesta y sesgos de cobertura/seleccion."),
+        expertCriterion("alcance_inferencia", "Alcance inferencial delimitado", 13, ["inferencia", "representatividad", "generalizacion", "validez externa", "extrapolacion", "limitaciones"], "Delimitar a que poblacion se puede inferir y que no se puede generalizar.", true),
+        expertCriterion("instrumento_campo", "Instrumento o fuente de datos", 8, ["cuestionario", "instrumento", "trabajo de campo", "base de datos", "fuente de datos", "operativo"], "Describir instrumento, fuente o operativo que produjo los datos."),
+        expertCriterion("replicabilidad", "Datos, codigo o documentacion replicable", 10, ["replicacion", "codigo", "datos", "github", "osf", "dataverse", "anexo", "microdatos"], "Preparar datos, codigo o anexo metodologico para verificar calculos.")
+      ]
+    },
+    quantitative: {
+      label: "Rubrica para estudios cuantitativos/estadisticos",
+      criteria: [
+        expertCriterion("datos_muestra", "Datos y muestra descritos", 12, ["datos", "dataset", "base de datos", "muestra", "observaciones", "n="], "Describir origen de datos, muestra y periodo de analisis.", true),
+        expertCriterion("variables", "Variables operacionalizadas", 12, ["variable", "indicador", "operacionalizacion", "medicion", "escala"], "Definir variables, indicadores, unidades y escalas.", true),
+        expertCriterion("modelo", "Modelo o estimacion especificada", 14, ["modelo", "regresion", "estimacion", "ecuacion", "coeficiente", "efecto"], "Especificar modelo, estimador y ecuacion o procedimiento de estimacion.", true),
+        expertCriterion("supuestos", "Supuestos y diagnosticos", 11, ["supuesto", "diagnostico", "colinealidad", "heterocedasticidad", "residuo", "normalidad"], "Explicitar supuestos y pruebas diagnosticas relevantes."),
+        expertCriterion("incertidumbre", "Incertidumbre reportada", 12, ["intervalo de confianza", "error estandar", "p-valor", "significancia", "incertidumbre"], "Reportar incertidumbre, intervalos o errores estandar.", true),
+        expertCriterion("sensibilidad", "Robustez o sensibilidad", 11, ["robustez", "sensibilidad", "especificacion alternativa", "validacion", "bootstrap"], "Agregar pruebas de robustez o sensibilidad."),
+        expertCriterion("causalidad", "Alcance causal/inferencial prudente", 12, ["causal", "asociacion", "inferencia", "limitacion", "endogeneidad", "confusion"], "Separar descripcion, asociacion, prediccion e inferencia causal."),
+        expertCriterion("replicabilidad", "Codigo/datos replicables", 16, ["codigo", "script", "github", "replicacion", "osf", "dataverse", "software", "r ", "python"], "Publicar o preparar codigo y datos necesarios para verificar calculos.")
+      ]
+    },
+    qualitative: {
+      label: "Rubrica para estudios cualitativos",
+      criteria: [
+        expertCriterion("caso_contexto", "Caso y contexto delimitados", 12, ["caso", "contexto", "territorio", "periodo", "escenario"], "Delimitar caso, periodo, contexto y unidad de analisis.", true),
+        expertCriterion("seleccion", "Seleccion de participantes/documentos", 12, ["participantes", "entrevistados", "corpus", "seleccion", "muestreo teorico", "criterios"], "Explicar criterios de seleccion de participantes, casos o documentos.", true),
+        expertCriterion("instrumento", "Instrumento o guia de recoleccion", 10, ["guia", "entrevista", "protocolo", "observacion", "grupo focal"], "Describir instrumento, guia o protocolo de recoleccion."),
+        expertCriterion("codificacion", "Codificacion y analisis trazable", 14, ["codificacion", "categorias", "analisis tematico", "analisis de contenido", "software"], "Documentar codificacion, categorias y procedimiento analitico.", true),
+        expertCriterion("saturacion", "Saturacion o suficiencia del corpus", 10, ["saturacion", "suficiencia", "redundancia", "densidad", "corpus"], "Justificar suficiencia del corpus o saturacion."),
+        expertCriterion("triangulacion", "Triangulacion o validacion", 10, ["triangulacion", "validacion", "contraste", "member checking", "intercodificador"], "Agregar triangulacion, contraste o validacion."),
+        expertCriterion("reflexividad", "Reflexividad y posicionamiento", 9, ["reflexividad", "posicionamiento", "sesgo del investigador", "rol del investigador"], "Explicitar reflexividad y posibles sesgos del investigador."),
+        expertCriterion("evidencia", "Evidencia cualitativa suficiente", 13, ["cita", "fragmento", "testimonio", "memo", "extracto"], "Vincular interpretaciones con citas o evidencia documental."),
+        expertCriterion("etica", "Etica y consentimiento", 10, ["etica", "consentimiento", "anonimato", "confidencialidad"], "Documentar consentimiento, anonimato y resguardo etico.")
+      ]
+    },
+    review: {
+      label: "Rubrica para revisiones de literatura",
+      criteria: [
+        expertCriterion("pregunta", "Pregunta de revision explicita", 12, ["pregunta de revision", "objetivo", "research question", "alcance"], "Formular pregunta y alcance de la revision.", true),
+        expertCriterion("busqueda", "Estrategia de busqueda", 14, ["busqueda", "search string", "palabras clave", "bases de datos", "scopus", "web of science", "scielo"], "Reportar bases, terminos, fechas y filtros de busqueda.", true),
+        expertCriterion("criterios", "Criterios de inclusion/exclusion", 13, ["criterios de inclusion", "criterios de exclusion", "inclusion", "exclusion"], "Definir criterios de inclusion y exclusion.", true),
+        expertCriterion("cribado", "Proceso de cribado trazable", 10, ["cribado", "screening", "prisma", "diagrama", "seleccion de estudios"], "Documentar cribado, registros removidos y estudios incluidos."),
+        expertCriterion("extraccion", "Extraccion de informacion", 11, ["extraccion de datos", "matriz", "codificacion", "ficha"], "Describir como se extrajo y codifico informacion."),
+        expertCriterion("calidad", "Evaluacion de calidad/sesgo", 12, ["calidad", "riesgo de sesgo", "appraisal", "evaluacion critica"], "Evaluar calidad o riesgo de sesgo de fuentes."),
+        expertCriterion("sintesis", "Metodo de sintesis", 14, ["sintesis", "metaanalisis", "narrativa", "tematica", "bibliometrica"], "Explicar metodo de sintesis de evidencia.", true),
+        expertCriterion("replicabilidad", "Protocolo o anexos replicables", 14, ["protocolo", "anexo", "osf", "prisma", "repositorio", "tabla suplementaria"], "Agregar protocolo, anexo o repositorio replicable.")
+      ]
+    },
+    simulation: {
+      label: "Rubrica para simulaciones o experimentos computacionales",
+      criteria: [
+        expertCriterion("objetivo", "Objetivo del modelo/simulacion", 12, ["objetivo", "simulacion", "experimento computacional", "modelo"], "Explicar que evalua la simulacion y por que.", true),
+        expertCriterion("supuestos", "Supuestos y parametros", 14, ["supuesto", "parametro", "escenario", "distribucion", "calibracion"], "Documentar supuestos, parametros y distribuciones.", true),
+        expertCriterion("algoritmo", "Algoritmo reproducible", 14, ["algoritmo", "pseudocodigo", "codigo", "script", "iteracion"], "Describir algoritmo o publicar codigo.", true),
+        expertCriterion("escenarios", "Escenarios comparables", 10, ["escenario", "condicion", "comparacion", "tratamiento"], "Definir escenarios y condiciones comparadas."),
+        expertCriterion("validacion", "Validacion del modelo", 12, ["validacion", "benchmark", "datos reales", "calibracion", "verificacion"], "Validar contra datos, benchmarks o casos conocidos."),
+        expertCriterion("sensibilidad", "Analisis de sensibilidad", 13, ["sensibilidad", "robustez", "parametro", "incertidumbre"], "Explorar sensibilidad a parametros clave.", true),
+        expertCriterion("salidas", "Salidas e incertidumbre", 11, ["resultado", "intervalo", "distribucion", "variabilidad", "incertidumbre"], "Reportar variabilidad e incertidumbre de salidas."),
+        expertCriterion("replicabilidad", "Paquete replicable", 14, ["github", "repositorio", "codigo", "datos sinteticos", "semilla"], "Publicar codigo, semilla y configuracion.")
+      ]
+    },
+    methodological: {
+      label: "Rubrica para articulos metodologicos",
+      criteria: [
+        expertCriterion("problema", "Problema metodologico claro", 13, ["problema metodologico", "limitacion", "sesgo", "validez", "error"], "Declarar con precision el problema metodologico que se resuelve.", true),
+        expertCriterion("marco", "Marco conceptual/metodologico", 11, ["marco", "teoria", "metodologia", "conceptual", "estado del arte"], "Ubicar el aporte frente a literatura metodologica previa."),
+        expertCriterion("procedimiento", "Procedimiento propuesto trazable", 15, ["procedimiento", "protocolo", "algoritmo", "pasos", "metodo propuesto"], "Explicar el procedimiento paso a paso.", true),
+        expertCriterion("comparacion", "Comparacion con alternativas", 12, ["comparacion", "alternativa", "baseline", "metodo existente", "contraste"], "Comparar con alternativas o practica usual."),
+        expertCriterion("demostracion", "Evidencia, ejemplo o aplicacion", 14, ["ejemplo", "aplicacion", "caso", "datos", "simulacion", "demostracion"], "Mostrar ejemplo verificable o aplicacion empirica.", true),
+        expertCriterion("limites", "Limites y condiciones de uso", 12, ["limite", "limitacion", "condicion", "alcance", "no aplica"], "Delimitar condiciones donde el metodo funciona o no."),
+        expertCriterion("replicabilidad", "Materiales replicables", 13, ["codigo", "anexo", "repositorio", "replicacion", "datos"], "Agregar materiales para verificar la propuesta."),
+        expertCriterion("aplicabilidad", "Implicaciones editoriales o practicas", 10, ["implicacion", "recomendacion", "aplicabilidad", "uso", "practica"], "Explicar como usar el aporte en revision o investigacion.")
+      ]
+    },
+    generic: {
+      label: "Rubrica experta general",
+      criteria: [
+        expertCriterion("objetivo", "Objetivo verificable", 13, ["objetivo", "pregunta", "hipotesis"], "Formular objetivo o pregunta verificable.", true),
+        expertCriterion("diseno", "Diseno coherente", 13, ["metodo", "metodologia", "diseno", "enfoque"], "Nombrar el diseno y justificarlo.", true),
+        expertCriterion("datos", "Datos/corpus/muestra claros", 13, ["datos", "muestra", "corpus", "casos", "participantes"], "Describir datos, corpus, casos o participantes.", true),
+        expertCriterion("analisis", "Analisis trazable", 14, ["analisis", "modelo", "codificacion", "procedimiento", "software"], "Explicar el procedimiento analitico."),
+        expertCriterion("inferencia", "Inferencia prudente", 14, ["inferencia", "generalizacion", "alcance", "limitacion"], "Delimitar alcance de inferencia o interpretacion."),
+        expertCriterion("coherencia", "Resultados y conclusiones alineados", 12, ["resultados", "discusion", "conclusion"], "Alinear resultados, discusion y conclusiones."),
+        expertCriterion("replicabilidad", "Documentacion verificable", 11, ["datos", "codigo", "anexo", "replicacion"], "Agregar documentacion verificable."),
+        expertCriterion("editorial", "Requisitos editoriales minimos", 10, ["referencias", "etica", "financiamiento", "conflicto de interes"], "Completar referencias y declaraciones editoriales.")
+      ]
+    }
+  };
+
+  const COHERENCE_COMPONENTS = [
+    expertCriterion("objetivo", "Objetivo/pregunta", 1, ["objetivo", "pregunta de investigacion", "hipotesis", "proposito"], "Declarar objetivo o pregunta de forma explicita.", true),
+    expertCriterion("datos", "Datos/muestra/corpus", 1, ["datos", "muestra", "corpus", "participantes", "base de datos", "fuente de datos"], "Conectar objetivo con datos, muestra o corpus."),
+    expertCriterion("metodo", "Metodo/procedimiento", 1, ["metodo", "metodologia", "procedimiento", "diseno", "analisis"], "Explicar el procedimiento que transforma datos en resultados.", true),
+    expertCriterion("resultados", "Resultados", 1, ["resultados", "hallazgos", "estimacion", "evidencia empirica"], "Mostrar resultados directamente vinculados al metodo."),
+    expertCriterion("conclusion", "Conclusion/alcance", 1, ["conclusion", "conclusiones", "discusion", "limitacion", "alcance"], "Alinear conclusiones con evidencia y limites."),
+    expertCriterion("replicabilidad", "Verificacion", 1, ["replicacion", "codigo", "datos", "anexo", "repositorio"], "Permitir verificar calculos o decisiones analiticas.")
+  ];
+
+  function expertCriterion(id, label, weight, terms, recommendation, critical) {
+    return { id, label, weight, terms, recommendation, critical: Boolean(critical) };
+  }
+
   function inferArticleIntent(normalized, topics, methods) {
     const methodologicalHits = countMatches(normalized, [
       "muestreo",
@@ -690,6 +833,215 @@
 
   function countMatches(normalized, terms) {
     return terms.reduce((sum, term) => sum + (normalized.includes(normalize(term).trim()) ? 1 : 0), 0);
+  }
+
+  function evaluateExpertReview(profile, sourceText, normalized) {
+    const studyType = classifyStudyType(profile, sourceText, normalized);
+    const rubric = EXPERT_RUBRICS[studyType.id] || EXPERT_RUBRICS.generic;
+    const criteria = rubric.criteria.map((criterion) => evaluateExpertCriterion(criterion, profile, sourceText, normalized));
+    const score = weightedScore(criteria);
+    const coherence = buildCoherenceMatrix(profile, sourceText, normalized);
+    const coherenceScore = Math.round(coherence.reduce((sum, item) => sum + item.value, 0) / coherence.length * 100);
+    const combinedScore = Math.round((score * 0.72) + (coherenceScore * 0.28));
+    const criticalGaps = criteria.filter((item) => item.critical && !["cumple", "no aplica"].includes(item.status));
+    const coherenceGaps = coherence.filter((item) => !["cumple", "parcial"].includes(item.status));
+    const verdict = expertVerdict(combinedScore, criticalGaps.length, coherenceGaps.length);
+    const narrative = expertNarrative(studyType, combinedScore, criticalGaps.length, coherenceGaps.length);
+    const corrections = buildExpertCorrections(criteria, coherence, profile, studyType);
+    const journalGuidance = buildExpertJournalGuidance(profile, studyType, combinedScore, criticalGaps);
+    const evidenceCount = criteria.reduce((sum, item) => sum + item.evidence.length, 0) +
+      coherence.reduce((sum, item) => sum + item.evidence.length, 0);
+
+    return {
+      timestamp: new Date().toISOString(),
+      studyType,
+      rubricName: rubric.label,
+      score: combinedScore,
+      rubricScore: score,
+      coherenceScore,
+      verdict,
+      narrative,
+      confidence: expertConfidence(studyType.confidence, criteria, coherence),
+      criteria,
+      coherence,
+      corrections,
+      journalGuidance,
+      evidenceCount,
+      criticalGaps: criticalGaps.length,
+      coherenceGaps: coherenceGaps.length
+    };
+  }
+
+  function classifyStudyType(profile, sourceText, normalized) {
+    const scores = Object.entries(STUDY_TYPE_PATTERNS).map(([id, config]) => {
+      let score = countMatches(normalized, config.terms);
+      if (id === "sampling_survey" && /error(?:es)? de muestreo|marco muestral|margen de error/.test(normalized)) score += 3;
+      if (id === "quantitative" && profile.methods.includes("cuantitativo")) score += 2;
+      if (id === "methodological" && profile.intent.methodologicalCore) score += 2;
+      if (id === "sampling_survey" && profile.methods.includes("muestreo")) score += 2;
+      return { id, label: config.label, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const quantitative = scores.find((item) => item.id === "quantitative");
+    const qualitative = scores.find((item) => item.id === "qualitative");
+    const mixed = quantitative && qualitative && quantitative.score >= 3 && qualitative.score >= 3;
+    const primary = mixed
+      ? { id: "generic", label: "Mixto o multimetodo", score: Math.min(quantitative.score, qualitative.score) }
+      : (scores[0] && scores[0].score > 0 ? scores[0] : { id: "generic", label: "No clasificado con seguridad", score: 0 });
+    const second = scores.find((item) => item.id !== primary.id);
+    const gap = second ? primary.score - second.score : primary.score;
+    const confidence = primary.score >= 5 && gap >= 2 ? "alta" : primary.score >= 3 ? "media" : "baja";
+    const evidenceTerms = primary.id === "generic"
+      ? ["metodo", "metodologia", "datos", "muestra", "analisis"]
+      : STUDY_TYPE_PATTERNS[primary.id].terms;
+
+    return {
+      id: primary.id,
+      label: primary.label,
+      confidence,
+      score: primary.score,
+      secondary: second && second.score > 0 ? second.label : "",
+      scores,
+      evidence: extractEvidenceSnippets(sourceText, evidenceTerms, 3)
+    };
+  }
+
+  function evaluateExpertCriterion(criterion, profile, sourceText, normalized) {
+    const evidence = extractEvidenceSnippets(sourceText, criterion.terms || [], 2);
+    const hits = countMatches(normalized, criterion.terms || []);
+    let status = "no verificable";
+    let confidence = "no evaluable";
+    let value = 0;
+
+    if (evidence.length >= 2 || hits >= 3) {
+      status = "cumple";
+      confidence = evidence.length ? "alta" : "media";
+      value = 1;
+    } else if (evidence.length === 1 || hits >= 1) {
+      status = "parcial";
+      confidence = evidence.length ? "media" : "baja";
+      value = 0.5;
+    } else if (profile.wordCount >= 1200 && criterion.critical) {
+      status = "no verificable";
+      confidence = "no evaluable";
+    }
+
+    return {
+      id: criterion.id,
+      label: criterion.label,
+      weight: criterion.weight,
+      status,
+      statusLabel: statusLabel(status),
+      confidence,
+      value,
+      critical: criterion.critical,
+      evidence,
+      recommendation: criterion.recommendation
+    };
+  }
+
+  function weightedScore(criteria) {
+    const total = criteria.reduce((sum, item) => sum + item.weight, 0) || 1;
+    const achieved = criteria.reduce((sum, item) => sum + item.weight * item.value, 0);
+    return Math.round((achieved / total) * 100);
+  }
+
+  function buildCoherenceMatrix(profile, sourceText, normalized) {
+    return COHERENCE_COMPONENTS.map((component) => {
+      const item = evaluateExpertCriterion(component, profile, sourceText, normalized);
+      if (component.id === "resultados" && profile.sections.results && item.value < 0.5) {
+        item.status = "parcial";
+        item.statusLabel = statusLabel(item.status);
+        item.confidence = "baja";
+        item.value = 0.5;
+      }
+      if (component.id === "conclusion" && (profile.sections.discussion || profile.sections.conclusion) && item.value < 0.5) {
+        item.status = "parcial";
+        item.statusLabel = statusLabel(item.status);
+        item.confidence = "baja";
+        item.value = 0.5;
+      }
+      item.gap = coherenceGapText(item);
+      return item;
+    });
+  }
+
+  function coherenceGapText(item) {
+    if (item.status === "cumple") return "Evidencia localizada.";
+    if (item.status === "parcial") return "Evidencia parcial; conviene hacer mas explicita la conexion.";
+    return item.recommendation;
+  }
+
+  function expertVerdict(score, criticalGaps, coherenceGaps) {
+    if (score >= 82 && criticalGaps === 0 && coherenceGaps <= 1) return "Dictamen experto favorable";
+    if (score >= 68 && criticalGaps <= 1) return "Favorable con correcciones metodologicas";
+    if (score >= 50) return "Requiere revision metodologica sustantiva";
+    return "No recomendable para envio sin reconstruccion metodologica";
+  }
+
+  function expertNarrative(studyType, score, criticalGaps, coherenceGaps) {
+    const typeText = studyType.label.toLowerCase();
+    if (score >= 82 && criticalGaps === 0) {
+      return `El manuscrito fue clasificado como ${typeText} y presenta evidencia suficiente para una revision metodologica avanzada.`;
+    }
+    if (score >= 68) {
+      return `El manuscrito parece ${typeText}, pero todavia debe cerrar brechas criticas o de coherencia antes del envio.`;
+    }
+    if (score >= 50) {
+      return `El manuscrito tiene senales de ${typeText}, aunque la evidencia metodologica localizada es incompleta.`;
+    }
+    return `No hay evidencia suficiente para sostener un dictamen experto robusto como ${typeText}.`;
+  }
+
+  function expertConfidence(typeConfidence, criteria, coherence) {
+    const evidenceCount = criteria.reduce((sum, item) => sum + item.evidence.length, 0) +
+      coherence.reduce((sum, item) => sum + item.evidence.length, 0);
+    if (typeConfidence === "alta" && evidenceCount >= 8) return "alta";
+    if (typeConfidence !== "baja" && evidenceCount >= 4) return "media";
+    return "baja";
+  }
+
+  function buildExpertCorrections(criteria, coherence, profile, studyType) {
+    const corrections = [];
+    criteria
+      .filter((item) => item.status !== "cumple")
+      .sort((a, b) => Number(b.critical) - Number(a.critical) || b.weight - a.weight)
+      .slice(0, 6)
+      .forEach((item) => corrections.push(item.recommendation));
+    coherence
+      .filter((item) => !["cumple", "parcial"].includes(item.status))
+      .slice(0, 3)
+      .forEach((item) => corrections.push(item.recommendation));
+    if (studyType.id === "sampling_survey" && !profile.hasData) {
+      corrections.push("Agregar anexo o paquete minimo para verificar calculos de error, muestra, pesos o intervalos.");
+    }
+    if (profile.extraction && profile.extraction.ocrUsed) {
+      corrections.push("Revisar visualmente el texto OCR antes de usar este dictamen como evidencia final.");
+    }
+    return unique(corrections).slice(0, 9);
+  }
+
+  function buildExpertJournalGuidance(profile, studyType, score, criticalGaps) {
+    const guidance = [];
+    if (studyType.id === "sampling_survey") {
+      guidance.push("Priorizar revistas de metodologia, estadistica aplicada, encuestas, ciencia abierta o investigacion social cuantitativa.");
+      guidance.push("Evitar revistas puramente disciplinarias si el manuscrito no demuestra aporte sustantivo a esa disciplina.");
+    } else if (studyType.id === "qualitative") {
+      guidance.push("Priorizar revistas que acepten evidencia cualitativa y expliciten criterios de transparencia analitica.");
+    } else if (studyType.id === "review") {
+      guidance.push("Priorizar revistas que acepten revisiones y exigir protocolo, busqueda y matriz de extraccion.");
+    } else if (studyType.id === "simulation") {
+      guidance.push("Priorizar revistas metodologicas o de estadistica computacional; adjuntar codigo y parametros.");
+    } else if (studyType.id === "methodological") {
+      guidance.push("Priorizar revistas metodologicas o generalistas con seccion tecnica; mostrar aplicacion verificable.");
+    }
+    if (score < 68 || criticalGaps.length) {
+      guidance.push("No recomendar envio inmediato: primero resolver criterios criticos no verificables.");
+    }
+    if (profile.intent.disciplinaryAnchors.length) {
+      guidance.push(`Hay anclaje disciplinario detectado en ${profile.intent.disciplinaryAnchors.join(", ")}; usarlo solo si el argumento sustantivo esta desarrollado.`);
+    }
+    return unique(guidance).slice(0, 6);
   }
 
   function normalize(text) {
@@ -992,6 +1344,9 @@
     );
     if (profile.intent.methodologicalCore && journal.perfilEditorial === "metodologia_pura") score += 4;
     if (profile.intent.statisticalCore && ["estadistica", "estadistica_social"].includes(journal.perfilEditorial)) score += 3;
+    if (profile.expertReview && profile.expertReview.studyType.id === "sampling_survey" && journal.metodos.includes("encuestas")) score += 3;
+    if (profile.expertReview && profile.expertReview.studyType.id === "sampling_survey" && journal.perfilEditorial && journal.perfilEditorial.startsWith("disciplinaria_") && scopeFit < 60) score -= 6;
+    if (profile.expertReview && profile.expertReview.score < 55 && journal.riesgoEditorial === "alto") score -= 4;
     if (profile.intent.methodologicalCore && journal.perfilEditorial && journal.perfilEditorial.startsWith("disciplinaria_") && scopeFit < 50) score -= 8;
     score = Math.max(0, Math.min(100, score));
 
@@ -1050,6 +1405,12 @@
     if (profile.intent.methodologicalCore && scopeFit >= 85) {
       why.push("El nucleo detectado es metodologico/estadistico y la revista esta orientada a metodologia, estadistica o investigacion social.");
     }
+    if (profile.expertReview && profile.expertReview.studyType.id === "sampling_survey" && journal.metodos.includes("encuestas")) {
+      why.push("El revisor experto clasifico el texto como muestreo/encuesta y la revista registra afinidad con estudios de encuesta.");
+    }
+    if (profile.expertReview && profile.expertReview.score >= 75 && journal.metodos.some((m) => ["metodologico", "replicacion", "ciencia abierta"].includes(m))) {
+      why.push("El dictamen experto sugiere una base metodologica aprovechable para una revista con exigencia de trazabilidad.");
+    }
     if (profile.intent.methodologicalCore && scopeFit < 50) {
       why.push("Encaje condicionado: la revista es disciplinaria y solo conviene si el manuscrito se reencuadra a su campo principal.");
     }
@@ -1073,6 +1434,9 @@
     const missing = [];
     if (profile.intent.methodologicalCore && scopeFit < 50) {
       missing.push("No usar como primera opcion: el manuscrito parece de errores de muestreo/metodologia y la revista es principalmente disciplinaria.");
+    }
+    if (profile.expertReview && profile.expertReview.score < 68) {
+      missing.push("Resolver primero las correcciones del revisor experto antes del envio editorial.");
     }
     if (languageFit !== 100) missing.push("El idioma detectado no esta entre los idiomas registrados para la revista.");
     if (wordFit < 100 && journal.palabrasMin && profile.wordCount < journal.palabrasMin) {
@@ -1103,6 +1467,7 @@
       $("#readinessScore").textContent = "0%";
       $("#diagnosticList").innerHTML = "<li>Sube o pega un manuscrito para evaluar robustez metodologica y preparacion editorial.</li>";
       renderMethodology(null);
+      renderExpertReview(null);
       return;
     }
     $("#metaTitle").textContent = profile.title;
@@ -1116,6 +1481,7 @@
     $("#readinessScore").textContent = `${profile.readiness.score}%`;
     renderDiagnostics(profile);
     renderMethodology(profile);
+    renderExpertReview(profile.expertReview);
   }
 
   function languageLabel(code) {
@@ -1182,6 +1548,10 @@
       items.unshift(`Resultado metodologico: ${profile.methodology.verdict} (${profile.methodology.score}/100).`);
       items.push(`Calidad del juzgamiento: ${profile.methodology.evidenceCount} evidencias textuales, ${profile.methodology.notVerifiableCount} criterios no verificables.`);
     }
+    if (profile.expertReview) {
+      items.unshift(`Revisor experto: ${profile.expertReview.studyType.label}; ${profile.expertReview.verdict} (${profile.expertReview.score}/100).`);
+      if (profile.expertReview.criticalGaps) items.push(`Brechas criticas del revisor experto: ${profile.expertReview.criticalGaps}.`);
+    }
     if (profile.extraction && profile.extraction.ocrUsed) {
       items.push(`OCR aplicado: ${profile.extraction.ocrPages} paginas procesadas; revisar visualmente el texto extraido antes de tomar el dictamen como definitivo.`);
     }
@@ -1231,6 +1601,126 @@
       : "<li>El manuscrito puede pasar a revision editorial fina.</li>";
   }
 
+  function renderExpertReview(review) {
+    if (!review) {
+      $("#expertVerdict").textContent = "Sin dictamen experto";
+      $("#expertNarrative").textContent = "Analiza un manuscrito para activar la clasificacion del tipo de estudio y la rubrica especializada.";
+      $("#expertScore").textContent = "0";
+      $("#expertStudyType").textContent = "-";
+      $("#expertConfidence").textContent = "-";
+      $("#expertRubricName").textContent = "-";
+      $("#expertTypeEvidence").className = "evidence-box empty";
+      $("#expertTypeEvidence").textContent = "Sin evidencia de clasificacion.";
+      $("#expertActions").innerHTML = "<li>El dictamen aparecera despues del analisis.</li>";
+      $("#coherenceMatrix").className = "coherence-matrix empty";
+      $("#coherenceMatrix").textContent = "Sin matriz generada.";
+      $("#expertRubricCriteria").className = "criteria-list empty";
+      $("#expertRubricCriteria").textContent = "Sin criterios especializados.";
+      $("#expertCorrections").innerHTML = "<li>Sin correcciones todavia.</li>";
+      $("#expertJournalGuidance").innerHTML = "<li>Sin orientacion todavia.</li>";
+      return;
+    }
+
+    $("#expertVerdict").textContent = review.verdict;
+    $("#expertNarrative").textContent = review.narrative;
+    $("#expertScore").textContent = String(review.score);
+    $("#expertStudyType").textContent = review.studyType.label;
+    $("#expertConfidence").textContent = review.confidence;
+    $("#expertRubricName").textContent = review.rubricName;
+    $("#expertTypeEvidence").className = review.studyType.evidence.length ? "evidence-box" : "evidence-box empty";
+    $("#expertTypeEvidence").innerHTML = review.studyType.evidence.length
+      ? `<span>Evidencia de clasificacion</span><ul>${review.studyType.evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "Sin evidencia textual fuerte para clasificar el tipo de estudio.";
+    $("#expertActions").innerHTML = [
+      `Rubrica: ${review.rubricScore}/100.`,
+      `Coherencia: ${review.coherenceScore}/100.`,
+      `Brechas criticas: ${review.criticalGaps}.`,
+      `Evidencias textuales localizadas: ${review.evidenceCount}.`
+    ].map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+
+    $("#coherenceMatrix").className = "coherence-matrix";
+    $("#coherenceMatrix").innerHTML = review.coherence.map((item) => `
+      <div class="coherence-item ${statusClass(item.status)}">
+        <span>${escapeHtml(item.statusLabel)}</span>
+        <strong>${escapeHtml(item.label)}</strong>
+        <p>${escapeHtml(item.gap)}</p>
+        ${item.evidence.length ? `<small>${escapeHtml(item.evidence[0])}</small>` : "<small>Sin evidencia textual localizada.</small>"}
+      </div>
+    `).join("");
+
+    $("#expertRubricCriteria").className = "criteria-list";
+    $("#expertRubricCriteria").innerHTML = review.criteria.map((item) => `
+      <div class="criteria-item ${statusClass(item.status)}">
+        <span>${escapeHtml(item.statusLabel)}</span>
+        <div class="criteria-body">
+          <strong>${escapeHtml(item.label)}${item.critical ? " *" : ""}</strong>
+          <small>Confianza: ${escapeHtml(item.confidence)} · Peso: ${item.weight} pts</small>
+          ${renderEvidenceList(item.evidence)}
+          <p>${escapeHtml(item.recommendation || "Sin recomendacion especifica.")}</p>
+        </div>
+        <em>${Math.round(item.value * item.weight)}/${item.weight}</em>
+      </div>
+    `).join("");
+    $("#expertCorrections").innerHTML = review.corrections.length
+      ? review.corrections.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+      : "<li>No se detectaron correcciones prioritarias con la rubrica aplicada.</li>";
+    $("#expertJournalGuidance").innerHTML = review.journalGuidance.length
+      ? review.journalGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+      : "<li>Usar el ranking de revistas despues de revisar el dictamen experto.</li>";
+  }
+
+  function exportExpertReport() {
+    if (!state.profile || !state.profile.expertReview) {
+      alert("Primero analiza un manuscrito para exportar el dictamen experto.");
+      return;
+    }
+    const profile = state.profile;
+    const review = profile.expertReview;
+    const top = state.ranking.slice(0, 5);
+    const html = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Dictamen experto metodologico</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#172026;line-height:1.45;margin:32px}
+    h1,h2{color:#0f4a5c}
+    table{border-collapse:collapse;width:100%;margin:12px 0}
+    th,td{border:1px solid #d9e1df;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f7fafc}
+    .meta{color:#65737c}
+    .box{border:1px solid #d9e1df;padding:12px;margin:12px 0}
+  </style>
+</head>
+<body>
+  <h1>Dictamen experto metodologico</h1>
+  <p class="meta">Generado: ${escapeHtml(new Date().toLocaleString("es-PY"))} · Archivo: ${escapeHtml(state.fileName || "texto pegado")}</p>
+  <div class="box">
+    <h2>${escapeHtml(profile.title)}</h2>
+    <p><strong>Tipo de estudio:</strong> ${escapeHtml(review.studyType.label)} (${escapeHtml(review.confidence)})</p>
+    <p><strong>Veredicto:</strong> ${escapeHtml(review.verdict)} · <strong>Puntaje:</strong> ${review.score}/100</p>
+    <p>${escapeHtml(review.narrative)}</p>
+  </div>
+  <h2>Matriz de coherencia</h2>
+  <table><thead><tr><th>Componente</th><th>Estado</th><th>Brecha</th><th>Evidencia</th></tr></thead><tbody>
+    ${review.coherence.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.statusLabel)}</td><td>${escapeHtml(item.gap)}</td><td>${escapeHtml(item.evidence[0] || "Sin evidencia localizada")}</td></tr>`).join("")}
+  </tbody></table>
+  <h2>Rubrica especializada</h2>
+  <table><thead><tr><th>Criterio</th><th>Estado</th><th>Confianza</th><th>Recomendacion</th><th>Evidencia</th></tr></thead><tbody>
+    ${review.criteria.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.statusLabel)}</td><td>${escapeHtml(item.confidence)}</td><td>${escapeHtml(item.recommendation)}</td><td>${escapeHtml(item.evidence.join(" | ") || "Sin evidencia localizada")}</td></tr>`).join("")}
+  </tbody></table>
+  <h2>Correcciones prioritarias</h2>
+  <ul>${review.corrections.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <h2>Orientacion editorial</h2>
+  <ul>${review.journalGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <h2>Revistas mejor posicionadas</h2>
+  <ol>${top.map((item) => `<li>${escapeHtml(item.journal.nombre)} (${escapeHtml(item.journal.pais)}): ${item.score}/100. ${escapeHtml(item.why[0] || "")}</li>`).join("")}</ol>
+  <p class="meta">El informe no incluye texto completo del manuscrito; solo metadatos y fragmentos breves de evidencia.</p>
+</body>
+</html>`;
+    downloadFile("dictamen_experto_metodologico.html", html, "text/html;charset=utf-8");
+  }
+
   function renderEvidenceList(evidence) {
     if (!evidence || !evidence.length) {
       return `<div class="evidence-box empty">Evidencia textual: no localizada. El criterio queda como no verificable o parcial segun las senales estructurales.</div>`;
@@ -1273,10 +1763,12 @@
       metodos_detectados: profile.methods,
       extraccion: profile.extraction,
       criterios: localCriteria,
+      revisor_experto: summarizeExpertForTraining(profile.expertReview),
       instrucciones: [
         "Evalua solo con evidencia disponible en el texto.",
         "No inventes secciones, resultados, datos, muestras ni pruebas estadisticas.",
         "Si no hay evidencia suficiente, usa no verificable.",
+        "Usa el tipo de estudio y la rubrica especializada como contexto, pero corrige si el texto demuestra otra cosa.",
         "Devuelve exclusivamente JSON valido, sin markdown.",
         "Usa fragmentos de evidencia breves y no copies parrafos largos."
       ],
@@ -1658,6 +2150,7 @@
         nucleo_estadistico: state.profile.intent.statisticalCore
       },
       juicio_reglas: summarizeMethodologyForTraining(state.profile.methodology),
+      juicio_experto: summarizeExpertForTraining(state.profile.expertReview),
       juicio_ia: summarizeAiForTraining(state.aiReview),
       top_revistas: state.ranking.slice(0, 3).map((item) => ({
         revista: item.journal.nombre,
@@ -1699,6 +2192,35 @@
         id: item.id,
         estado: item.status,
         confianza: item.confidence,
+        evidencias: item.evidence.length
+      }))
+    };
+  }
+
+  function summarizeExpertForTraining(review) {
+    if (!review) return null;
+    return {
+      tipo_estudio: review.studyType.label,
+      tipo_estudio_id: review.studyType.id,
+      confianza: review.confidence,
+      rubrica: review.rubricName,
+      score: review.score,
+      rubrica_score: review.rubricScore,
+      coherencia_score: review.coherenceScore,
+      verdict: review.verdict,
+      brechas_criticas: review.criticalGaps,
+      brechas_coherencia: review.coherenceGaps,
+      evidencias: review.evidenceCount,
+      criterios: review.criteria.map((item) => ({
+        id: item.id,
+        estado: item.status,
+        confianza: item.confidence,
+        critico: item.critical,
+        evidencias: item.evidence.length
+      })),
+      coherencia: review.coherence.map((item) => ({
+        id: item.id,
+        estado: item.status,
         evidencias: item.evidence.length
       }))
     };
@@ -1753,6 +2275,9 @@
       feedback: entry.feedback_humano ? entry.feedback_humano.decision : "",
       reglas_score: entry.juicio_reglas ? entry.juicio_reglas.score : "",
       reglas_verdict: entry.juicio_reglas ? entry.juicio_reglas.verdict : "",
+      experto_tipo: entry.juicio_experto ? entry.juicio_experto.tipo_estudio : "",
+      experto_score: entry.juicio_experto ? entry.juicio_experto.score : "",
+      experto_verdict: entry.juicio_experto ? entry.juicio_experto.verdict : "",
       ia_modelo: entry.juicio_ia ? entry.juicio_ia.modelo : "",
       ia_score: entry.juicio_ia ? entry.juicio_ia.score : "",
       ia_verdict: entry.juicio_ia ? entry.juicio_ia.verdict : "",
@@ -1925,6 +2450,12 @@
       readiness: state.profile.readiness.score,
       robustez_metodologica: state.profile.methodology ? state.profile.methodology.score : "",
       veredicto_metodologico: state.profile.methodology ? state.profile.methodology.verdict : "",
+      tipo_estudio_experto: state.profile.expertReview ? state.profile.expertReview.studyType.label : "",
+      confianza_experta: state.profile.expertReview ? state.profile.expertReview.confidence : "",
+      puntaje_experto: state.profile.expertReview ? state.profile.expertReview.score : "",
+      veredicto_experto: state.profile.expertReview ? state.profile.expertReview.verdict : "",
+      coherencia_experta: state.profile.expertReview ? state.profile.expertReview.coherenceScore : "",
+      brechas_criticas_expertas: state.profile.expertReview ? state.profile.expertReview.criticalGaps : "",
       alertas_criticas: state.profile.methodology ? state.profile.methodology.alerts.length : 0,
       evidencias_detectadas: state.profile.methodology ? state.profile.methodology.evidenceCount : 0,
       criterios_no_verificables: state.profile.methodology ? state.profile.methodology.notVerifiableCount : 0,
@@ -1981,6 +2512,7 @@
           <span class="audit-meta">${new Date(entry.timestamp).toLocaleString("es-PY")} · ${escapeHtml(entry.usuario)} · ${escapeHtml(entry.archivo)}</span>
           <span>Extraccion: ${escapeHtml(entry.extraccion_metodo || "sin dato")} · OCR: ${entry.ocr_usado ? "si" : "no"}${entry.ocr_confianza ? ` · ${entry.ocr_confianza}%` : ""}</span>
           <span>Robustez metodologica: ${escapeHtml(entry.veredicto_metodologico || "sin dato")} ${entry.robustez_metodologica || ""}/100</span>
+          <span>Revisor experto: ${escapeHtml(entry.tipo_estudio_experto || "sin tipo")} · ${escapeHtml(entry.veredicto_experto || "sin dictamen")} ${entry.puntaje_experto || ""}/100</span>
           <span>Evidencias: ${entry.evidencias_detectadas || 0} · No verificables: ${entry.criterios_no_verificables || 0}</span>
           <span>Top recomendado: ${escapeHtml(top)}</span>
         </article>
@@ -2012,6 +2544,12 @@
       readiness: entry.readiness,
       robustez_metodologica: entry.robustez_metodologica,
       veredicto_metodologico: entry.veredicto_metodologico,
+      tipo_estudio_experto: entry.tipo_estudio_experto,
+      confianza_experta: entry.confianza_experta,
+      puntaje_experto: entry.puntaje_experto,
+      veredicto_experto: entry.veredicto_experto,
+      coherencia_experta: entry.coherencia_experta,
+      brechas_criticas_expertas: entry.brechas_criticas_expertas,
       alertas_criticas: entry.alertas_criticas,
       evidencias_detectadas: entry.evidencias_detectadas,
       criterios_no_verificables: entry.criterios_no_verificables,

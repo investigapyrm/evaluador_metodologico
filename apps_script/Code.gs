@@ -38,6 +38,12 @@ const ANALISIS_HEADERS = [
   'readiness',
   'robustez_metodologica',
   'veredicto_metodologico',
+  'tipo_estudio_experto',
+  'confianza_experta',
+  'puntaje_experto',
+  'veredicto_experto',
+  'coherencia_experta',
+  'brechas_criticas_expertas',
   'alertas_criticas',
   'evidencias_detectadas',
   'criterios_no_verificables',
@@ -81,6 +87,10 @@ const ENTRENAMIENTO_HEADERS = [
   'feedback_nota',
   'reglas_score',
   'reglas_veredicto',
+  'experto_tipo',
+  'experto_score',
+  'experto_veredicto',
+  'experto_coherencia',
   'ia_modelo',
   'ia_endpoint_tipo',
   'ia_score',
@@ -89,6 +99,7 @@ const ENTRENAMIENTO_HEADERS = [
   'ocr_usado',
   'top_json',
   'criterios_reglas_json',
+  'criterios_experto_json',
   'criterios_ia_json'
 ];
 
@@ -139,6 +150,12 @@ function doPost(e) {
       Number(payload.readiness || 0),
       Number(payload.robustez_metodologica || 0),
       clean(payload.veredicto_metodologico),
+      clean(payload.tipo_estudio_experto),
+      clean(payload.confianza_experta),
+      payload.puntaje_experto === '' || payload.puntaje_experto == null ? '' : Number(payload.puntaje_experto || 0),
+      clean(payload.veredicto_experto),
+      payload.coherencia_experta === '' || payload.coherencia_experta == null ? '' : Number(payload.coherencia_experta || 0),
+      payload.brechas_criticas_expertas === '' || payload.brechas_criticas_expertas == null ? '' : Number(payload.brechas_criticas_expertas || 0),
       Number(payload.alertas_criticas || 0),
       Number(payload.evidencias_detectadas || 0),
       Number(payload.criterios_no_verificables || 0),
@@ -157,6 +174,7 @@ function doPost(e) {
 function appendTrainingCase(ss, payload) {
   validateTrainingPayload(payload);
   const reglas = payload.juicio_reglas || {};
+  const experto = payload.juicio_experto || {};
   const ia = payload.juicio_ia || {};
   const feedback = payload.feedback_humano || {};
   const extraction = payload.extraccion || {};
@@ -172,6 +190,10 @@ function appendTrainingCase(ss, payload) {
     clean(feedback.nota),
     Number(reglas.score || 0),
     clean(reglas.verdict),
+    clean(experto.tipo_estudio),
+    experto.score === '' || experto.score == null ? '' : Number(experto.score || 0),
+    clean(experto.verdict),
+    experto.coherencia_score === '' || experto.coherencia_score == null ? '' : Number(experto.coherencia_score || 0),
     clean(ia.modelo),
     clean(ia.endpoint_tipo),
     ia.score === '' || ia.score == null ? '' : Number(ia.score || 0),
@@ -180,6 +202,7 @@ function appendTrainingCase(ss, payload) {
     Boolean(extraction.ocrUsed),
     JSON.stringify(payload.top_revistas || []),
     JSON.stringify(reglas.criterios || []),
+    JSON.stringify(experto.criterios || []),
     JSON.stringify(ia.criterios || [])
   ]);
   appendLog(ss, 'registrar_entrenamiento', payload.usuario, payload.titulo);
@@ -207,6 +230,8 @@ function ensureSheet(ss, name, headers) {
   if (needsHeader) {
     range.setValues([headers]);
     sheet.setFrozenRows(1);
+  } else if (headers.some((header, index) => String(current[index] || '') !== header)) {
+    range.setValues([headers]);
   }
   return sheet;
 }
