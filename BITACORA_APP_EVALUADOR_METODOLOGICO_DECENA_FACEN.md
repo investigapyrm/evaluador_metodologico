@@ -1,3 +1,77 @@
+## 2026-07-03 15:24
+
+### Proyecto
+
+* Nombre: App web evaluador metodologico de manuscritos
+* Cliente o institucion: FACEN-UNA / DECENA_FACEN
+* Ruta local: `/Users/diegobernardomezabogado/Library/CloudStorage/GoogleDrive-dmeza.py@gmail.com/Mi unidad/DECENA_FACEN/03_TESIS/APP_EVALUADOR_METODOLOGICO_ARTICULOS_2026-07-03`
+* Repositorio: `https://github.com/investigapyrm/evaluador_metodologico.git`
+* URL publica: `https://investigapyrm.github.io/evaluador_metodologico/`
+* Responsable: Codex
+* Version: ajuste cache-busting IA `2026-07-03`
+
+### Objetivo de la intervencion
+
+* Asegurar que el navegador cargue el `app.js` corregido del modulo IA y registrar la URL publica ya activa.
+
+### Diagnostico inicial
+
+* GitHub Pages respondio `HTTP 200`.
+* La consulta con cache-busting confirmo que el HTML publico contiene `testAiBtn` y `Probar conexion`.
+* La consulta con cache-busting confirmo que el `app.js` publico contiene `probeAiEndpoint` y el mensaje para Ollama local.
+* El HTML aun cargaba `app.js` sin parametro de version, lo que podia dejar a algunos navegadores usando cache anterior.
+
+### Acciones realizadas
+
+* Se cambio la referencia de `app.js` en `index.html` a `app.js?v=20260703-ia1`.
+* Se actualizo el `APP_SHELL` del service worker para cachear `app.js?v=20260703-ia1`.
+* Se agrego la URL publica al README.
+
+### Archivos modificados
+
+* `index.html`
+* `service-worker.js`
+* `README.md`
+* `BITACORA_APP_EVALUADOR_METODOLOGICO_DECENA_FACEN.md`
+
+### Comandos o scripts ejecutados
+
+* `curl -I -L --max-time 20 https://investigapyrm.github.io/evaluador_metodologico/`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/index.html?v=c401916' | rg -n "testAiBtn|Probar conexion|app.js"`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/app.js?v=c401916' | rg -n "testAiEndpoint|probeAiEndpoint|No se pudo conectar con Ollama local"`
+* `curl -sS -L --max-time 20 'https://investigapyrm.github.io/evaluador_metodologico/service-worker.js?v=c401916' | rg -n "evaluador-metodologico-v20260703-4"`
+
+### Resultados verificados
+
+* GitHub Pages responde `HTTP 200`.
+* La version publica con cache-busting ya contiene el boton de prueba IA y el diagnostico para Ollama.
+* Se agrego cache-busting propio al `app.js` para reducir riesgo de navegador con JavaScript anterior.
+
+### Pruebas realizadas
+
+* Verificacion HTTP de GitHub Pages.
+* Verificacion de marcadores funcionales en HTML, JS y service worker publicos.
+
+### Errores o incidentes
+
+* Sin incidentes nuevos.
+
+### Soluciones aplicadas
+
+* Cache-busting en `app.js` y service worker para entregar el hotfix IA con mayor confiabilidad.
+
+### Pendientes
+
+* Probar el flujo completo con Ollama activo en el equipo del usuario.
+
+### Riesgos
+
+* Si el usuario tiene una PWA instalada con cache antiguo, puede necesitar recargar o actualizar version para tomar el nuevo service worker.
+
+### Recomendaciones
+
+* Al probar la app publica, usar `Probar conexion` en la pestana IA antes de `Evaluar IA`.
+
 ## 2026-07-03 15:22
 
 ### Proyecto

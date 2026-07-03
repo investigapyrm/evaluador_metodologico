@@ -12,6 +12,10 @@ Repositorio principal:
 
 `https://github.com/investigapyrm/evaluador_metodologico`
 
+URL publica:
+
+`https://investigapyrm.github.io/evaluador_metodologico/`
+
 Esta carpeta es una copia derivada de:
 
 `03_TESIS/APP_RECOMENDADOR_REVISTAS_2026-06-26`

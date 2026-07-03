@@ -3,7 +3,7 @@ const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
-  "./app.js",
+  "./app.js?v=20260703-ia1",
   "./data/journals_seed.js",
   "./manifest.webmanifest"
 ];
