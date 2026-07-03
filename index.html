@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="App web para evaluar robustez metodologica, trazabilidad y preparacion editorial de manuscritos academicos.">
+  <meta name="theme-color" content="#155e75">
+  <title>Evaluador Metodologico de Manuscritos</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="loginView" class="login-view">
+    <div class="login-panel">
+      <div>
+        <p class="eyebrow">DECENA FACEN</p>
+        <h1>Evaluador Metodologico de Manuscritos</h1>
+        <p class="lead">Revision preliminar de robustez metodologica, trazabilidad, preparacion editorial y compatibilidad con revistas.</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <label>
+          Responsable
+          <input id="loginName" type="text" autocomplete="name" required placeholder="Nombre del usuario">
+        </label>
+        <label>
+          Rol
+          <select id="loginRole">
+            <option value="investigador">Investigador</option>
+            <option value="editor">Editor academico</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </label>
+        <label>
+          Codigo de sesion
+          <input id="loginCode" type="password" autocomplete="current-password" required placeholder="FACEN-REVISTAS">
+        </label>
+        <button class="primary-btn" type="submit">
+          <i data-lucide="log-in"></i>
+          Entrar
+        </button>
+        <p class="login-note">Version inicial: el manuscrito se procesa en el navegador. Si el PDF es escaneado, puede usar OCR local asistido. La app no guarda texto completo salvo configuracion institucional explicita.</p>
+      </form>
+    </div>
+  </section>
+
+  <main id="appView" class="app-shell" hidden>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">App web academica</p>
+        <h1>Evaluador Metodologico de Manuscritos</h1>
+      </div>
+      <div class="session-box">
+        <span id="sessionRole">Rol</span>
+        <strong id="sessionName">Usuario</strong>
+        <button id="logoutBtn" class="icon-btn" type="button" title="Cerrar sesion" aria-label="Cerrar sesion">
+          <i data-lucide="log-out"></i>
+        </button>
+      </div>
+    </header>
+
+    <section class="status-strip" aria-live="polite">
+      <div>
+        <span class="status-label">Motor</span>
+        <strong>Evaluacion local</strong>
+      </div>
+      <div>
+        <span class="status-label">Base editorial</span>
+        <strong id="journalCount">0 revistas</strong>
+      </div>
+      <div>
+        <span class="status-label">Criterios</span>
+        <strong id="methodologyCount">0 criterios</strong>
+      </div>
+      <div>
+        <span class="status-label">Estado</span>
+        <strong id="analysisStatus">Sin analisis</strong>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <aside class="left-panel">
+        <div class="panel-head">
+          <h2>Manuscrito</h2>
+          <span id="fileState" class="state-pill">pendiente</span>
+        </div>
+
+        <div class="upload-box">
+          <input id="fileInput" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.tif,.tiff,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,image/*">
+          <label for="fileInput" class="upload-label">
+            <i data-lucide="upload-cloud"></i>
+            <strong>Subir manuscrito</strong>
+            <span>PDF, DOCX, TXT, MD o imagen</span>
+          </label>
+        </div>
+
+        <label class="field">
+          Texto extraido o pegado
+          <textarea id="manualText" rows="12" placeholder="Pega aqui el resumen o el manuscrito si el archivo no puede extraerse."></textarea>
+        </label>
+
+        <div class="action-row">
+          <button id="analyzeBtn" class="primary-btn" type="button">
+            <i data-lucide="scan-text"></i>
+            Evaluar
+          </button>
+          <button id="clearBtn" class="ghost-btn" type="button">
+            <i data-lucide="eraser"></i>
+            Limpiar
+          </button>
+        </div>
+
+        <div class="source-note">
+          <strong>Privacidad:</strong>
+          <span>El texto se analiza localmente. Si se usa OCR, solo se exportan metadatos de calidad y resultados resumidos.</span>
+        </div>
+      </aside>
+
+      <section class="main-panel">
+        <nav class="tabs" aria-label="Vistas de analisis">
+          <button class="tab-btn active" data-tab="tabResumen" type="button">Diagnostico</button>
+          <button class="tab-btn" data-tab="tabMetodologia" type="button">Metodologia</button>
+          <button class="tab-btn" data-tab="tabRanking" type="button">Revistas</button>
+          <button class="tab-btn" data-tab="tabChecklist" type="button">Checklist</button>
+          <button class="tab-btn" data-tab="tabAuditoria" type="button">Auditoria</button>
+        </nav>
+
+        <section id="tabResumen" class="tab-panel active">
+          <div class="grid-2">
+            <article class="summary-card">
+              <h2>Datos extraidos</h2>
+              <dl class="summary-list">
+                <div><dt>Titulo probable</dt><dd id="metaTitle">-</dd></div>
+                <div><dt>Idioma</dt><dd id="metaLanguage">-</dd></div>
+                <div><dt>Palabras</dt><dd id="metaWords">-</dd></div>
+                <div><dt>Extraccion</dt><dd id="metaExtraction">-</dd></div>
+                <div><dt>Resumen</dt><dd id="metaAbstract">-</dd></div>
+                <div><dt>Palabras clave</dt><dd id="metaKeywords">-</dd></div>
+              </dl>
+            </article>
+
+            <article class="summary-card">
+              <h2>Senales detectadas</h2>
+              <div id="signalChips" class="chip-wrap empty">Sin senales todavia</div>
+              <div class="quality-box">
+                <span>Preparacion editorial</span>
+                <meter id="readinessMeter" min="0" max="100" value="0"></meter>
+                <strong id="readinessScore">0%</strong>
+              </div>
+            </article>
+          </div>
+
+          <article class="summary-card">
+            <h2>Diagnostico inicial</h2>
+            <ul id="diagnosticList" class="clean-list">
+              <li>Sube o pega un manuscrito para evaluar robustez metodologica y preparacion editorial.</li>
+            </ul>
+          </article>
+        </section>
+
+        <section id="tabMetodologia" class="tab-panel">
+          <article class="methodology-hero">
+            <div>
+              <p class="eyebrow">Resultado metodologico</p>
+              <h2 id="methodologyVerdict">Sin evaluacion</h2>
+              <p id="methodologyNarrative">La evaluacion aparecera despues de analizar el manuscrito.</p>
+            </div>
+            <div class="methodology-score" aria-label="Puntaje de robustez metodologica">
+              <strong id="methodologyScore">0</strong>
+              <span>/100</span>
+            </div>
+          </article>
+
+          <div class="grid-2 methodology-panels">
+            <article class="summary-card">
+              <h2>Criterios metodologicos</h2>
+              <div id="methodologyCriteria" class="criteria-list empty">Sin criterios evaluados.</div>
+            </article>
+
+            <article class="summary-card">
+              <h2>Alertas y acciones</h2>
+              <h3>Alertas criticas</h3>
+              <ul id="criticalAlerts" class="clean-list">
+                <li>Sin alertas todavia.</li>
+              </ul>
+              <h3>Recomendaciones</h3>
+              <ul id="methodologyRecommendations" class="clean-list">
+                <li>Analiza un manuscrito para generar recomendaciones.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section id="tabRanking" class="tab-panel">
+          <div class="ranking-head">
+            <div>
+              <h2>Revistas compatibles</h2>
+              <p id="rankingSubtitle">Las revistas apareceran despues de la evaluacion metodologica.</p>
+            </div>
+            <div class="weight-box" id="weightBox" hidden>
+              <label>
+                Encaje tematico
+                <input id="topicWeight" type="range" min="25" max="55" value="40">
+              </label>
+              <label>
+                Compatibilidad formal
+                <input id="formatWeight" type="range" min="15" max="35" value="25">
+              </label>
+            </div>
+          </div>
+          <div id="rankingList" class="ranking-list empty">Sin ranking generado.</div>
+        </section>
+
+        <section id="tabChecklist" class="tab-panel">
+          <div class="checklist-layout">
+            <div>
+              <label class="field compact">
+                Revista
+                <select id="journalSelect"></select>
+              </label>
+              <div id="journalDetail" class="journal-detail"></div>
+            </div>
+            <div>
+              <h2>Acciones para someter</h2>
+              <ul id="submissionChecklist" class="check-list"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="tabAuditoria" class="tab-panel">
+          <div class="audit-head">
+            <div>
+              <h2>Bitacora local</h2>
+              <p>Registros de analisis guardados en este navegador.</p>
+            </div>
+            <div class="action-row">
+              <button id="exportJsonBtn" class="ghost-btn" type="button">
+                <i data-lucide="download"></i>
+                JSON
+              </button>
+              <button id="exportCsvBtn" class="ghost-btn" type="button">
+                <i data-lucide="table"></i>
+                CSV
+              </button>
+              <button id="clearAuditBtn" class="danger-btn" type="button">
+                <i data-lucide="trash-2"></i>
+                Vaciar
+              </button>
+            </div>
+          </div>
+          <div id="auditLog" class="audit-log empty">No hay registros locales.</div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <template id="rankingItemTemplate">
+    <article class="journal-card">
+      <div class="journal-score">
+        <strong></strong>
+        <span>puntos</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-title-row">
+          <h3></h3>
+          <span class="country-pill"></span>
+        </div>
+        <p class="journal-summary"></p>
+        <div class="chip-wrap journal-chips"></div>
+        <details>
+          <summary>Ver explicacion y pendientes</summary>
+          <div class="explain-grid">
+            <div>
+              <h4>Por que encaja</h4>
+              <ul class="why-list"></ul>
+            </div>
+            <div>
+              <h4>Pendientes</h4>
+              <ul class="missing-list"></ul>
+            </div>
+          </div>
+        </details>
+      </div>
+      <button class="select-journal icon-btn" type="button" title="Ver checklist" aria-label="Ver checklist">
+        <i data-lucide="list-checks"></i>
+      </button>
+    </article>
+  </template>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+  <script src="https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js" defer></script>
+  <script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js" defer></script>
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="data/journals_seed.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
